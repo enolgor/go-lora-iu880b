@@ -2,8 +2,7 @@ package slip
 
 import (
 	"bytes"
-
-	"github.com/tarm/serial"
+	"io"
 )
 
 const (
@@ -23,20 +22,66 @@ const (
 	SLIPDEC_STATE_ESC
 )
 
-type SlipPacket struct {
+type slipPacket struct {
 	Buffer bytes.Buffer
 	Err    error
 }
 
-func SlipDecoder(s *serial.Port, c chan<- SlipPacket) {
+func SlipEncode(payload []byte) []byte {
+	var buff bytes.Buffer
+	buff.WriteByte(SLIP_END)
+	for _, b := range payload {
+		switch b {
+		case SLIP_END:
+			buff.WriteByte(SLIP_ESC)
+			buff.WriteByte(SLIP_ESC_END)
+			break
+		case SLIP_ESC:
+			buff.WriteByte(SLIP_ESC)
+			buff.WriteByte(SLIP_ESC_ESC)
+			break
+		default:
+			buff.WriteByte(b)
+			break
+		}
+	}
+	buff.WriteByte(SLIP_END)
+	return buff.Bytes()
+}
+
+type SlipDecoder struct {
+	reader io.Reader
+	ch     chan slipPacket
+}
+
+func (d *SlipDecoder) Read() ([]byte, error) {
+	packet := <-d.ch
+	if packet.Err != nil {
+		return nil, packet.Err
+	}
+	return packet.Buffer.Bytes(), nil
+}
+
+/*
+func (d *SlipDecoder) Close() {
+	close(d.ch)
+}*/
+
+func NewDecoder(reader io.Reader) SlipDecoder {
+	ch := make(chan slipPacket)
+	go slipChannelDecoder(reader, ch)
+	return SlipDecoder{reader, ch}
+}
+
+func slipChannelDecoder(s io.Reader, c chan<- slipPacket) {
 	buf := make([]byte, BUFFER_SIZE)
-	slipPacket := SlipPacket{}
-	slipPacket.Buffer.Grow(BUFFER_SIZE)
+	packet := slipPacket{}
+	packet.Buffer.Grow(BUFFER_SIZE)
 	state := SLIPDEC_STATE_START
 	for {
 		n, err := s.Read(buf)
 		if err != nil {
-			errInf := SlipPacket{Err: err}
+			errInf := slipPacket{Err: err}
 			c <- errInf
 		}
 		for _, b := range buf[:n] {
@@ -45,33 +90,33 @@ func SlipDecoder(s *serial.Port, c chan<- SlipPacket) {
 				if b == SLIP_END {
 					state = SLIPDEC_STATE_IN_FRAME
 				}
-				slipPacket.Buffer.Reset()
+				packet.Buffer.Reset()
 				break
 			case SLIPDEC_STATE_IN_FRAME:
 				switch b {
 				case SLIP_END:
-					if slipPacket.Buffer.Len() != 0 {
-						c <- slipPacket
+					if packet.Buffer.Len() != 0 {
+						c <- packet
 					}
-					slipPacket.Buffer.Reset()
+					packet.Buffer.Reset()
 					state = SLIPDEC_STATE_START
 					break
 				case SLIP_ESC:
 					state = SLIPDEC_STATE_ESC
 					break
 				default:
-					slipPacket.Buffer.WriteByte(b)
+					packet.Buffer.WriteByte(b)
 					break
 				}
 				break
 			case SLIPDEC_STATE_ESC:
 				switch b {
 				case SLIP_ESC_END:
-					slipPacket.Buffer.WriteByte(SLIP_END)
+					packet.Buffer.WriteByte(SLIP_END)
 					state = SLIPDEC_STATE_IN_FRAME
 					break
 				case SLIP_ESC_ESC:
-					slipPacket.Buffer.WriteByte(SLIP_ESC)
+					packet.Buffer.WriteByte(SLIP_ESC)
 					state = SLIPDEC_STATE_IN_FRAME
 					break
 				default:
