@@ -9,13 +9,12 @@ import (
 // DEVMGMT_MSG_PING_REQ
 
 type PingReq struct {
-	wimodmessage
+	wimodMessageImpl
 }
 
 func NewPingReq() *PingReq {
 	req := &PingReq{}
-	req.dst = DEVMGMT_ID
-	req.id = DEVMGMT_MSG_PING_REQ
+	req.code = DEVMGMT_MSG_PING_REQ
 	return req
 }
 
@@ -30,13 +29,12 @@ func (p *PingReq) Encode() ([]byte, error) {
 // DEVMGMT_MSG_PING_RSP
 
 type PingResp struct {
-	wimodmessage
+	wimodMessageImpl
 }
 
 func NewPingResp() *PingResp {
 	resp := &PingResp{}
-	resp.dst = DEVMGMT_ID
-	resp.id = DEVMGMT_MSG_PING_RSP
+	resp.code = DEVMGMT_MSG_PING_RSP
 	return resp
 }
 
@@ -51,13 +49,12 @@ func (p *PingResp) Decode(bytes []byte) error {
 // DEVMGMT_MSG_GET_DEVICE_INFO_REQ
 
 type GetDeviceInfoReq struct {
-	wimodmessage
+	wimodMessageImpl
 }
 
 func NewGetDeviceInfoReq() *GetDeviceInfoReq {
 	req := &GetDeviceInfoReq{}
-	req.dst = DEVMGMT_ID
-	req.id = DEVMGMT_MSG_GET_DEVICE_INFO_REQ
+	req.code = DEVMGMT_MSG_GET_DEVICE_INFO_REQ
 	return req
 }
 
@@ -72,7 +69,7 @@ func (p *GetDeviceInfoReq) Encode() ([]byte, error) {
 // DEVMGMT_MSG_GET_DEVICE_INFO_RSP
 
 type GetDeviceInfoResp struct {
-	wimodmessage
+	wimodMessageImpl
 	ModuleType    byte
 	DeviceAddress uint32
 	DeviceID      uint32
@@ -80,8 +77,7 @@ type GetDeviceInfoResp struct {
 
 func NewGetDeviceInfoResp() *GetDeviceInfoResp {
 	resp := &GetDeviceInfoResp{}
-	resp.dst = DEVMGMT_ID
-	resp.id = DEVMGMT_MSG_GET_DEVICE_INFO_RSP
+	resp.code = DEVMGMT_MSG_GET_DEVICE_INFO_RSP
 	return resp
 }
 
@@ -99,13 +95,12 @@ func (p *GetDeviceInfoResp) Decode(bytes []byte) error {
 // DEVMGMT_MSG_GET_FW_INFO_REQ
 
 type GetFWInfoReq struct {
-	wimodmessage
+	wimodMessageImpl
 }
 
 func NewGetFWInfoReq() *GetFWInfoReq {
 	req := &GetFWInfoReq{}
-	req.dst = DEVMGMT_ID
-	req.id = DEVMGMT_MSG_GET_FW_INFO_REQ
+	req.code = DEVMGMT_MSG_GET_FW_INFO_REQ
 	return req
 }
 
@@ -120,7 +115,7 @@ func (p *GetFWInfoReq) Encode() ([]byte, error) {
 // DEVMGMT_MSG_GET_FW_INFO_RSP
 
 type GetFWInfoResp struct {
-	wimodmessage
+	wimodMessageImpl
 	MinorVersion  byte
 	MajorVersion  byte
 	Build         uint16
@@ -130,8 +125,7 @@ type GetFWInfoResp struct {
 
 func NewGetFWInfoResp() *GetFWInfoResp {
 	resp := &GetFWInfoResp{}
-	resp.dst = DEVMGMT_ID
-	resp.id = DEVMGMT_MSG_GET_FW_INFO_RSP
+	resp.code = DEVMGMT_MSG_GET_FW_INFO_RSP
 	return resp
 }
 
@@ -155,14 +149,13 @@ func (p *GetFWInfoResp) Decode(bytes []byte) error {
 // DEVMGMT_MSG_SET_OPMODE_REQ
 
 type SetOPModeReq struct {
-	wimodmessage
+	wimodMessageImpl
 	Mode byte
 }
 
 func NewSetOPModeReq(mode byte) *SetOPModeReq {
 	req := &SetOPModeReq{}
-	req.dst = DEVMGMT_ID
-	req.id = DEVMGMT_MSG_SET_OPMODE_REQ
+	req.code = DEVMGMT_MSG_SET_OPMODE_REQ
 	req.Mode = mode
 	return req
 }
@@ -178,13 +171,12 @@ func (p *SetOPModeReq) Encode() ([]byte, error) {
 // DEVMGMT_MSG_SET_OPMODE_RSP
 
 type SetOPModeResp struct {
-	wimodmessage
+	wimodMessageImpl
 }
 
 func NewSetOPModeResp() *SetOPModeResp {
 	resp := &SetOPModeResp{}
-	resp.dst = DEVMGMT_ID
-	resp.id = DEVMGMT_MSG_SET_OPMODE_RSP
+	resp.code = DEVMGMT_MSG_SET_OPMODE_RSP
 	return resp
 }
 
@@ -199,13 +191,12 @@ func (p *SetOPModeResp) Decode(bytes []byte) error {
 // DEVMGMT_MSG_GET_OPMODE_REQ
 
 type GetOPModeReq struct {
-	wimodmessage
+	wimodMessageImpl
 }
 
 func NewGetOPModeReq() *GetOPModeReq {
 	req := &GetOPModeReq{}
-	req.dst = DEVMGMT_ID
-	req.id = DEVMGMT_MSG_GET_OPMODE_REQ
+	req.code = DEVMGMT_MSG_GET_OPMODE_REQ
 	return req
 }
 
@@ -220,14 +211,13 @@ func (p *GetOPModeReq) Encode() ([]byte, error) {
 // DEVMGMT_MSG_GET_OPMODE_RSP
 
 type GetOPModeResp struct {
-	wimodmessage
+	wimodMessageImpl
 	Mode byte
 }
 
 func NewGetOPModeResp() *GetOPModeResp {
 	resp := &GetOPModeResp{}
-	resp.dst = DEVMGMT_ID
-	resp.id = DEVMGMT_MSG_GET_OPMODE_RSP
+	resp.code = DEVMGMT_MSG_GET_OPMODE_RSP
 	return resp
 }
 
@@ -243,14 +233,13 @@ func (p *GetOPModeResp) Decode(bytes []byte) error {
 // DEVMGMT_MSG_SET_RTC_REQ
 
 type SetRTCReq struct {
-	wimodmessage
+	wimodMessageImpl
 	Time time.Time
 }
 
 func NewSetRTCReq(time time.Time) *SetRTCReq {
 	req := &SetRTCReq{}
-	req.dst = DEVMGMT_ID
-	req.id = DEVMGMT_MSG_SET_RTC_REQ
+	req.code = DEVMGMT_MSG_SET_RTC_REQ
 	req.Time = time
 	return req
 }
@@ -268,13 +257,12 @@ func (p *SetRTCReq) Encode() ([]byte, error) {
 // DEVMGMT_MSG_SET_RTC_RSP
 
 type SetRTCResp struct {
-	wimodmessage
+	wimodMessageImpl
 }
 
 func NewSetRTCResp() *SetRTCResp {
 	resp := &SetRTCResp{}
-	resp.dst = DEVMGMT_ID
-	resp.id = DEVMGMT_MSG_SET_RTC_RSP
+	resp.code = DEVMGMT_MSG_SET_RTC_RSP
 	return resp
 }
 
@@ -289,13 +277,12 @@ func (p *SetRTCResp) Decode(bytes []byte) error {
 // DEVMGMT_MSG_GET_RTC_REQ
 
 type GetRTCReq struct {
-	wimodmessage
+	wimodMessageImpl
 }
 
 func NewGetRTCReq() *GetRTCReq {
 	req := &GetRTCReq{}
-	req.dst = DEVMGMT_ID
-	req.id = DEVMGMT_MSG_GET_RTC_REQ
+	req.code = DEVMGMT_MSG_GET_RTC_REQ
 	return req
 }
 
@@ -310,14 +297,13 @@ func (p *GetRTCReq) Encode() ([]byte, error) {
 // DEVMGMT_MSG_GET_RTC_RSP
 
 type GetRTCResp struct {
-	wimodmessage
+	wimodMessageImpl
 	Time time.Time
 }
 
 func NewGetRTCResp() *GetRTCResp {
 	resp := &GetRTCResp{}
-	resp.dst = DEVMGMT_ID
-	resp.id = DEVMGMT_MSG_GET_RTC_RSP
+	resp.code = DEVMGMT_MSG_GET_RTC_RSP
 	return resp
 }
 
@@ -333,13 +319,12 @@ func (p *GetRTCResp) Decode(bytes []byte) error {
 // DEVMGMT_MSG_GET_DEVICE_STATUS_REQ
 
 type GetDeviceStatusReq struct {
-	wimodmessage
+	wimodMessageImpl
 }
 
 func NewGetDeviceStatusReq() *GetDeviceStatusReq {
 	req := &GetDeviceStatusReq{}
-	req.dst = DEVMGMT_ID
-	req.id = DEVMGMT_MSG_GET_DEVICE_STATUS_REQ
+	req.code = DEVMGMT_MSG_GET_DEVICE_STATUS_REQ
 	return req
 }
 
@@ -354,7 +339,7 @@ func (p *GetDeviceStatusReq) Encode() ([]byte, error) {
 // DEVMGMT_MSG_GET_DEVICE_STATUS_RSP
 
 type GetDeviceStatusResp struct {
-	wimodmessage
+	wimodMessageImpl
 	SystemTickResolution byte
 	SystemTicks          uint32
 	TargetTime           time.Time
@@ -376,8 +361,7 @@ type GetDeviceStatusResp struct {
 
 func NewGetDeviceStatusResp() *GetDeviceStatusResp {
 	resp := &GetDeviceStatusResp{}
-	resp.dst = DEVMGMT_ID
-	resp.id = DEVMGMT_MSG_GET_DEVICE_STATUS_RSP
+	resp.code = DEVMGMT_MSG_GET_DEVICE_STATUS_RSP
 	return resp
 }
 
@@ -409,7 +393,7 @@ func (p *GetDeviceStatusResp) Decode(bytes []byte) error {
 // DEVMGMT_MSG_SET_RTC_ALARM_REQ
 
 type SetRTCAlarmReq struct {
-	wimodmessage
+	wimodMessageImpl
 	AlarmType byte
 	Hour      byte
 	Minutes   byte
@@ -423,8 +407,7 @@ const (
 
 func NewSetRTCAlarmReq(alarmType, hour, minutes, seconds byte) *SetRTCAlarmReq {
 	req := &SetRTCAlarmReq{}
-	req.dst = DEVMGMT_ID
-	req.id = DEVMGMT_MSG_SET_RTC_ALARM_REQ
+	req.code = DEVMGMT_MSG_SET_RTC_ALARM_REQ
 	req.AlarmType = alarmType
 	req.Hour = hour
 	req.Minutes = minutes
@@ -448,13 +431,12 @@ func (p *SetRTCAlarmReq) Encode() ([]byte, error) {
 // DEVMGMT_MSG_SET_RTC_ALARM_RSP
 
 type SetRTCAlarmResp struct {
-	wimodmessage
+	wimodMessageImpl
 }
 
 func NewSetRTCAlarmResp() *SetRTCAlarmResp {
 	resp := &SetRTCAlarmResp{}
-	resp.dst = DEVMGMT_ID
-	resp.id = DEVMGMT_MSG_SET_RTC_ALARM_RSP
+	resp.code = DEVMGMT_MSG_SET_RTC_ALARM_RSP
 	return resp
 }
 
@@ -469,14 +451,13 @@ func (p *SetRTCAlarmResp) Decode(bytes []byte) error {
 // DEVMGMT_MSG_CLEAR_RTC_ALARM_REQ
 
 type ClearRTCAlarmReq struct {
-	wimodmessage
+	wimodMessageImpl
 }
 
 func NewClearRTCAlarmReq() *ClearRTCAlarmReq {
-	resp := &ClearRTCAlarmReq{}
-	resp.dst = DEVMGMT_ID
-	resp.id = DEVMGMT_MSG_CLEAR_RTC_ALARM_REQ
-	return resp
+	req := &ClearRTCAlarmReq{}
+	req.code = DEVMGMT_MSG_CLEAR_RTC_ALARM_REQ
+	return req
 }
 
 func (p *ClearRTCAlarmReq) String() string {
@@ -490,13 +471,12 @@ func (p *ClearRTCAlarmReq) Encode() ([]byte, error) {
 // DEVMGMT_MSG_CLEAR_RTC_ALARM_RSP
 
 type ClearRTCAlarmResp struct {
-	wimodmessage
+	wimodMessageImpl
 }
 
 func NewClearRTCAlarmResp() *ClearRTCAlarmResp {
 	resp := &ClearRTCAlarmResp{}
-	resp.dst = DEVMGMT_ID
-	resp.id = DEVMGMT_MSG_CLEAR_RTC_ALARM_RSP
+	resp.code = DEVMGMT_MSG_CLEAR_RTC_ALARM_RSP
 	return resp
 }
 
@@ -511,14 +491,13 @@ func (p *ClearRTCAlarmResp) Decode(bytes []byte) error {
 // DEVMGMT_MSG_GET_RTC_ALARM_REQ
 
 type GetRTCAlarmReq struct {
-	wimodmessage
+	wimodMessageImpl
 }
 
 func NewGetRTCAlarmReq() *GetRTCAlarmReq {
-	resp := &GetRTCAlarmReq{}
-	resp.dst = DEVMGMT_ID
-	resp.id = DEVMGMT_MSG_GET_RTC_ALARM_REQ
-	return resp
+	req := &GetRTCAlarmReq{}
+	req.code = DEVMGMT_MSG_GET_RTC_ALARM_REQ
+	return req
 }
 
 func (p *GetRTCAlarmReq) String() string {
@@ -532,7 +511,7 @@ func (p *GetRTCAlarmReq) Encode() ([]byte, error) {
 // DEVMGMT_MSG_GET_RTC_ALARM_RSP
 
 type GetRTCAlarmResp struct {
-	wimodmessage
+	wimodMessageImpl
 	AlarmStatus byte
 	AlarmType   byte
 	Hour        byte
@@ -542,8 +521,7 @@ type GetRTCAlarmResp struct {
 
 func NewGetRTCAlarmResp() *GetRTCAlarmResp {
 	resp := &GetRTCAlarmResp{}
-	resp.dst = DEVMGMT_ID
-	resp.id = DEVMGMT_MSG_GET_RTC_ALARM_RSP
+	resp.code = DEVMGMT_MSG_GET_RTC_ALARM_RSP
 	return resp
 }
 
@@ -563,14 +541,13 @@ func (p *GetRTCAlarmResp) Decode(bytes []byte) error {
 // DEVMGMT_MSG_RTC_ALARM_IND
 
 type RTCAlarmInd struct {
-	wimodmessage
+	wimodMessageImpl
 }
 
 func NewRTCAlarmInd() *RTCAlarmInd {
-	resp := &RTCAlarmInd{}
-	resp.dst = DEVMGMT_ID
-	resp.id = DEVMGMT_MSG_RTC_ALARM_IND
-	return resp
+	ind := &RTCAlarmInd{}
+	ind.code = DEVMGMT_MSG_RTC_ALARM_IND
+	return ind
 }
 
 func (p *RTCAlarmInd) String() string {

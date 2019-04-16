@@ -61,7 +61,7 @@ func (c *WiModController) start() {
 				continue
 			}
 			code := (uint16(hciPacket.Dst) << 8) + uint16(hciPacket.ID)
-			if wimod.IsAlarm(hciPacket.Dst, hciPacket.ID) {
+			if wimod.IsAlarm(code) {
 				ind, err := wimod.DecodeInd(&hciPacket)
 				if err != nil {
 					fmt.Printf("Error: %s\n", err.Error())
@@ -69,7 +69,7 @@ func (c *WiModController) start() {
 				} else {
 					if c.noBlock && len(c.events) == cap(c.events) {
 						discarded := <-c.events
-						fmt.Printf("Event buffer full. Discarding oldest event: [%02X][%02X]\n", discarded.GetDst(), discarded.GetID())
+						fmt.Printf("Event buffer full. Discarding oldest event: [%04X]\n", discarded.Code())
 					}
 					c.events <- ind
 					continue
@@ -100,8 +100,7 @@ func (c *WiModController) Close() {
 
 func (c *WiModController) Request(req wimod.WiModMessageReq, resp wimod.WiModMessageResp) error {
 	respChannel := make(chan hci.HCIPacket)
-	respCode := (uint16(resp.GetDst()) << 8) + uint16(resp.GetID())
-	channels, ok := c.respChannels[respCode]
+	channels, ok := c.respChannels[resp.Code()]
 	if !ok {
 		channels = []chan hci.HCIPacket{}
 	}
@@ -110,7 +109,7 @@ func (c *WiModController) Request(req wimod.WiModMessageReq, resp wimod.WiModMes
 		return err
 	}
 	channels = append(channels, respChannel)
-	c.respChannels[respCode] = channels
+	c.respChannels[resp.Code()] = channels
 	hci := <-respChannel
 	err = wimod.DecodeResp(&hci, resp)
 	if err != nil {
