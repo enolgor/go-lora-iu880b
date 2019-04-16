@@ -154,11 +154,91 @@ func (p *GetFWInfoResp) Decode(bytes []byte) error {
 
 // DEVMGMT_MSG_SET_OPMODE_REQ
 
+type SetOPModeReq struct {
+	wimodmessage
+	Mode byte
+}
+
+func NewSetOPModeReq(mode byte) *SetOPModeReq {
+	req := &SetOPModeReq{}
+	req.dst = DEVMGMT_ID
+	req.id = DEVMGMT_MSG_SET_OPMODE_REQ
+	req.Mode = mode
+	return req
+}
+
+func (p *SetOPModeReq) String() string {
+	return fmt.Sprintf("SetOPModeReq[Mode: %02X]", p.Mode)
+}
+
+func (p *SetOPModeReq) Encode() ([]byte, error) {
+	return []byte{p.Mode}, nil
+}
+
 // DEVMGMT_MSG_SET_OPMODE_RSP
+
+type SetOPModeResp struct {
+	wimodmessage
+}
+
+func NewSetOPModeResp() *SetOPModeResp {
+	resp := &SetOPModeResp{}
+	resp.dst = DEVMGMT_ID
+	resp.id = DEVMGMT_MSG_SET_OPMODE_RSP
+	return resp
+}
+
+func (p *SetOPModeResp) String() string {
+	return fmt.Sprintf("SetOPModeResp[]")
+}
+
+func (p *SetOPModeResp) Decode(bytes []byte) error {
+	return nil
+}
 
 // DEVMGMT_MSG_GET_OPMODE_REQ
 
+type GetOPModeReq struct {
+	wimodmessage
+}
+
+func NewGetOPModeReq() *GetOPModeReq {
+	req := &GetOPModeReq{}
+	req.dst = DEVMGMT_ID
+	req.id = DEVMGMT_MSG_GET_OPMODE_REQ
+	return req
+}
+
+func (p *GetOPModeReq) String() string {
+	return fmt.Sprintf("GetOPModeReq[]")
+}
+
+func (p *GetOPModeReq) Encode() ([]byte, error) {
+	return []byte{}, nil
+}
+
 // DEVMGMT_MSG_GET_OPMODE_RSP
+
+type GetOPModeResp struct {
+	wimodmessage
+	Mode byte
+}
+
+func NewGetOPModeResp() *GetOPModeResp {
+	resp := &GetOPModeResp{}
+	resp.dst = DEVMGMT_ID
+	resp.id = DEVMGMT_MSG_GET_OPMODE_RSP
+	return resp
+}
+
+func (p *GetOPModeResp) String() string {
+	return fmt.Sprintf("GetOPModeResp[Mode: %02X]", p.Mode)
+}
+
+func (p *GetOPModeResp) Decode(bytes []byte) error {
+	p.Mode = bytes[0]
+	return nil
+}
 
 // DEVMGMT_MSG_SET_RTC_REQ
 
@@ -167,10 +247,11 @@ type SetRTCReq struct {
 	Time time.Time
 }
 
-func NewSetRTCReq() *SetRTCReq {
+func NewSetRTCReq(time time.Time) *SetRTCReq {
 	req := &SetRTCReq{}
 	req.dst = DEVMGMT_ID
 	req.id = DEVMGMT_MSG_SET_RTC_REQ
+	req.Time = time
 	return req
 }
 
@@ -326,9 +407,176 @@ func (p *GetDeviceStatusResp) Decode(bytes []byte) error {
 }
 
 // DEVMGMT_MSG_SET_RTC_ALARM_REQ
+
+type SetRTCAlarmReq struct {
+	wimodmessage
+	AlarmType byte
+	Hour      byte
+	Minutes   byte
+	Seconds   byte
+}
+
+const (
+	AlarmSingle = byte(0x00)
+	AlarmDaily  = byte(0x01)
+)
+
+func NewSetRTCAlarmReq(alarmType, hour, minutes, seconds byte) *SetRTCAlarmReq {
+	req := &SetRTCAlarmReq{}
+	req.dst = DEVMGMT_ID
+	req.id = DEVMGMT_MSG_SET_RTC_ALARM_REQ
+	req.AlarmType = alarmType
+	req.Hour = hour
+	req.Minutes = minutes
+	req.Seconds = seconds
+	return req
+}
+
+func (p *SetRTCAlarmReq) String() string {
+	return fmt.Sprintf("SetRTCAlarmReq[Type: %X, Hour: %d, Minutes: %d, Seconds: %d]", p.AlarmType, p.Hour, p.Minutes, p.Seconds)
+}
+
+func (p *SetRTCAlarmReq) Encode() ([]byte, error) {
+	buff := make([]byte, 4)
+	buff[0] = p.AlarmType
+	buff[1] = p.Hour
+	buff[2] = p.Minutes
+	buff[3] = p.Seconds
+	return buff, nil
+}
+
 // DEVMGMT_MSG_SET_RTC_ALARM_RSP
+
+type SetRTCAlarmResp struct {
+	wimodmessage
+}
+
+func NewSetRTCAlarmResp() *SetRTCAlarmResp {
+	resp := &SetRTCAlarmResp{}
+	resp.dst = DEVMGMT_ID
+	resp.id = DEVMGMT_MSG_SET_RTC_ALARM_RSP
+	return resp
+}
+
+func (p *SetRTCAlarmResp) String() string {
+	return fmt.Sprintf("SetRTCAlarmResp[]")
+}
+
+func (p *SetRTCAlarmResp) Decode(bytes []byte) error {
+	return nil
+}
+
 // DEVMGMT_MSG_CLEAR_RTC_ALARM_REQ
+
+type ClearRTCAlarmReq struct {
+	wimodmessage
+}
+
+func NewClearRTCAlarmReq() *ClearRTCAlarmReq {
+	resp := &ClearRTCAlarmReq{}
+	resp.dst = DEVMGMT_ID
+	resp.id = DEVMGMT_MSG_CLEAR_RTC_ALARM_REQ
+	return resp
+}
+
+func (p *ClearRTCAlarmReq) String() string {
+	return fmt.Sprintf("ClearRTCAlarmReq[]")
+}
+
+func (p *ClearRTCAlarmReq) Encode() ([]byte, error) {
+	return []byte{}, nil
+}
+
 // DEVMGMT_MSG_CLEAR_RTC_ALARM_RSP
+
+type ClearRTCAlarmResp struct {
+	wimodmessage
+}
+
+func NewClearRTCAlarmResp() *ClearRTCAlarmResp {
+	resp := &ClearRTCAlarmResp{}
+	resp.dst = DEVMGMT_ID
+	resp.id = DEVMGMT_MSG_CLEAR_RTC_ALARM_RSP
+	return resp
+}
+
+func (p *ClearRTCAlarmResp) String() string {
+	return fmt.Sprintf("ClearRTCAlarmResp[]")
+}
+
+func (p *ClearRTCAlarmResp) Decode(bytes []byte) error {
+	return nil
+}
+
 // DEVMGMT_MSG_GET_RTC_ALARM_REQ
+
+type GetRTCAlarmReq struct {
+	wimodmessage
+}
+
+func NewGetRTCAlarmReq() *GetRTCAlarmReq {
+	resp := &GetRTCAlarmReq{}
+	resp.dst = DEVMGMT_ID
+	resp.id = DEVMGMT_MSG_GET_RTC_ALARM_REQ
+	return resp
+}
+
+func (p *GetRTCAlarmReq) String() string {
+	return fmt.Sprintf("GetRTCAlarmReq[]")
+}
+
+func (p *GetRTCAlarmReq) Encode() ([]byte, error) {
+	return []byte{}, nil
+}
+
 // DEVMGMT_MSG_GET_RTC_ALARM_RSP
+
+type GetRTCAlarmResp struct {
+	wimodmessage
+	AlarmStatus byte
+	AlarmType   byte
+	Hour        byte
+	Minutes     byte
+	Seconds     byte
+}
+
+func NewGetRTCAlarmResp() *GetRTCAlarmResp {
+	resp := &GetRTCAlarmResp{}
+	resp.dst = DEVMGMT_ID
+	resp.id = DEVMGMT_MSG_GET_RTC_ALARM_RSP
+	return resp
+}
+
+func (p *GetRTCAlarmResp) String() string {
+	return fmt.Sprintf("GetRTCAlarmResp[Status: %X, Type: %X, Hour: %d, Minutes: %d, Seconds: %d]", p.AlarmStatus, p.AlarmType, p.Hour, p.Minutes, p.Seconds)
+}
+
+func (p *GetRTCAlarmResp) Decode(bytes []byte) error {
+	p.AlarmStatus = bytes[0]
+	p.AlarmType = bytes[1]
+	p.Hour = bytes[2]
+	p.Minutes = bytes[3]
+	p.Seconds = bytes[4]
+	return nil
+}
+
 // DEVMGMT_MSG_RTC_ALARM_IND
+
+type RTCAlarmInd struct {
+	wimodmessage
+}
+
+func NewRTCAlarmInd() *RTCAlarmInd {
+	resp := &RTCAlarmInd{}
+	resp.dst = DEVMGMT_ID
+	resp.id = DEVMGMT_MSG_RTC_ALARM_IND
+	return resp
+}
+
+func (p *RTCAlarmInd) String() string {
+	return fmt.Sprintf("RTCAlarmInd[]")
+}
+
+func (p *RTCAlarmInd) Decode(bytes []byte) error {
+	return nil
+}

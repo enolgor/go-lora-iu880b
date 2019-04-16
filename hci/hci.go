@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"../crc"
-	"../slip"
 )
 
 type HCIPacket struct {
@@ -16,14 +15,6 @@ type HCIPacket struct {
 
 func (p HCIPacket) String() string {
 	return fmt.Sprintf("HCI: Dst=[%X] ID=[%X] Payload=[%X]", p.Dst, p.ID, p.Payload)
-}
-
-type HciDecoder struct {
-	slipDecoder *slip.SlipDecoder
-}
-
-func NewDecoder(slipDecoder *slip.SlipDecoder) HciDecoder {
-	return HciDecoder{slipDecoder}
 }
 
 func (hci *HCIPacket) Encode() []byte {
@@ -37,15 +28,7 @@ func (hci *HCIPacket) Encode() []byte {
 	return buff.Bytes()
 }
 
-func (h *HciDecoder) Read(hciPacket *HCIPacket) error {
-	payload, err := h.slipDecoder.Read()
-	if err != nil {
-		return err
-	}
-	return decodeHCI(payload, hciPacket)
-}
-
-func decodeHCI(payload []byte, hciPacket *HCIPacket) error {
+func (hciPacket *HCIPacket) Decode(payload []byte) error {
 	if crc.CheckCRC16(payload) {
 		hciPacket.Dst = payload[0]
 		hciPacket.ID = payload[1]
