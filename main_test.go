@@ -13,7 +13,7 @@ import (
 	"github.com/tarm/serial"
 )
 
-func TestReactivate(t *testing.T) {
+func TestSendUData(t *testing.T) {
 	c := &serial.Config{Name: "COM3", Baud: 115200, Size: 8, Parity: serial.ParityNone, StopBits: 1}
 	s, err := serial.OpenPort(c)
 	if err != nil {
@@ -21,15 +21,74 @@ func TestReactivate(t *testing.T) {
 	}
 	config := &WiModControllerConfig{Stream: s}
 	controller := NewController(config)
-	reactReq := wimod.NewReactivateDeviceReq()
-	reactResp := wimod.NewReactivateDeviceResp()
-	err = controller.Request(reactReq, reactResp)
+	udataReq := wimod.NewSendUDataReq(2, []byte("Hola Mundo!"))
+	udataResp := wimod.NewSendUDataResp()
+	err = controller.Request(udataReq, udataResp)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(reactResp)
-	time.Sleep(5 * time.Second)
-	controller.Close()
+	fmt.Println(udataResp)
+	udataTxInd := wimod.NewSendUDataTxInd()
+	err = controller.ReadSpecificInd(udataTxInd)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(udataTxInd)
+}
+
+func TestJoin(t *testing.T) {
+	c := &serial.Config{Name: "COM3", Baud: 115200, Size: 8, Parity: serial.ParityNone, StopBits: 1}
+	s, err := serial.OpenPort(c)
+	if err != nil {
+		log.Fatal(err)
+	}
+	config := &WiModControllerConfig{Stream: s}
+	controller := NewController(config)
+	EUI := wimod.DecodeEUI([]byte{0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x11, 0x22})
+	Key := wimod.DecodeKey([]byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10})
+	joinParamReq := wimod.NewSetJoinParamReq(EUI, Key)
+	joinParamResp := wimod.NewSetJoinParamResp()
+	err = controller.Request(joinParamReq, joinParamResp)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("Join Params Set")
+	joinReq := wimod.NewJoinNetworkReq()
+	joinResp := wimod.NewJoinNetworkResp()
+	err = controller.Request(joinReq, joinResp)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("Join Command Sent")
+	joinTxEvent := wimod.NewJoinNetworkTxInd()
+	joinedEvent := wimod.NewJoinNetworkInd()
+	err = controller.ReadSpecificInd(joinTxEvent)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(joinTxEvent)
+	err = controller.ReadSpecificInd(joinedEvent)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(joinedEvent)
+}
+
+func TestNetworkStatus(t *testing.T) {
+	c := &serial.Config{Name: "COM3", Baud: 115200, Size: 8, Parity: serial.ParityNone, StopBits: 1}
+	s, err := serial.OpenPort(c)
+	if err != nil {
+		log.Fatal(err)
+	}
+	config := &WiModControllerConfig{Stream: s}
+	controller := NewController(config)
+	nwkStatusReq := wimod.NewGetNwkStatusReq()
+	nwkStatusResp := wimod.NewGetNwkStatusResp()
+	err = controller.Request(nwkStatusReq, nwkStatusResp)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(nwkStatusResp)
 }
 func TestReset(t *testing.T) {
 	c := &serial.Config{Name: "COM3", Baud: 115200, Size: 8, Parity: serial.ParityNone, StopBits: 1}
@@ -40,8 +99,12 @@ func TestReset(t *testing.T) {
 	config := &WiModControllerConfig{Stream: s}
 	controller := NewController(config)
 	go func() {
-		ind := controller.ReadInd()
-		fmt.Printf("Received event: %v\n", ind)
+		ind, err := controller.ReadInd()
+		if err != nil {
+			fmt.Printf("Event Error: %s\n", err.Error())
+		} else {
+			fmt.Printf("Received event: %v\n", ind)
+		}
 	}()
 	resetReq := wimod.NewResetReq()
 	resetResp := wimod.NewResetResp()
@@ -62,8 +125,12 @@ func TestEvents(t *testing.T) {
 	setAlarmFromNow(controller, 2*time.Second)
 	for i := 0; i < 10; i++ {
 		go func(id int) {
-			ind := controller.ReadInd()
-			fmt.Printf("Received from routine %d: %v\n", id, ind)
+			ind, err := controller.ReadInd()
+			if err != nil {
+				fmt.Printf("Event Error: %s\n", err.Error())
+			} else {
+				fmt.Printf("Received from routine %d: %v\n", id, ind)
+			}
 		}(i)
 	}
 	time.Sleep(5 * time.Second)
@@ -146,9 +213,13 @@ func TestAlarm(t *testing.T) {
 	config := &WiModControllerConfig{Stream: s}
 	controller := NewController(config)
 	go func() {
-		ind := controller.ReadInd() // print events
-		fmt.Println(ind.Status())
-		fmt.Println(ind)
+		alarm := wimod.NewRTCAlarmInd()
+		err := controller.ReadSpecificInd(alarm) // print events
+		if err != nil {
+			fmt.Printf("Event Error: %s\n", err.Error())
+		} else {
+			fmt.Println(alarm)
+		}
 	}()
 	clearAlarm(controller)
 	requestAndPrintAlarm(controller) // 0s
@@ -308,4 +379,9 @@ func TestKey(t *testing.T) {
 	bytes := wimod.EncodeKey(&k)
 	fmt.Printf("0x%02X\n", bytes)
 	fmt.Println(wimod.DecodeKey(bytes))
+}
+
+func TestSizes(t *testing.T) {
+	b := []byte{0x11, 0x22}
+	fmt.Printf("%X\n", b[2:])
 }

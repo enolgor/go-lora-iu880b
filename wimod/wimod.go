@@ -70,8 +70,8 @@ func DecodeResp(hci *hci.HCIPacket, resp WiModMessageResp) error {
 	if err != nil {
 		return err
 	}
-	resp.Decode(hci.Payload[1:])
-	return nil
+	err = resp.Decode(hci.Payload[1:])
+	return err
 }
 
 func DecodeInd(hci *hci.HCIPacket) (WiModMessageInd, error) {
@@ -79,14 +79,16 @@ func DecodeInd(hci *hci.HCIPacket) (WiModMessageInd, error) {
 	if !IsAlarm(code) {
 		return nil, fmt.Errorf("Packet is not an event")
 	}
-	status := hci.Payload[0]
-	err := statusCheck(hci.Dst, status)
-	if err != nil {
-		return nil, err
-	}
 	ind := alarmConstructors[code]()
-	ind.Decode(hci.Payload) //INCLUDE STATUS
-	return ind, nil
+	err := ind.Decode(hci.Payload) //INCLUDE STATUS
+	return ind, err
+}
+
+func DecodeSpecificInd(hci *hci.HCIPacket, ind WiModMessageInd) error {
+	if hci.Dst != ind.Dst() || hci.ID != ind.ID() {
+		return fmt.Errorf("Wrong DST or ID")
+	}
+	return ind.Decode(hci.Payload)
 }
 
 func statusCheck(dst, status byte) error {

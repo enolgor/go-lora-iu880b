@@ -14,9 +14,9 @@ type WiModController struct {
 	rwc           io.ReadWriteCloser
 	slipDecoder   *slip.SlipDecoder
 	closer        chan bool
-	events        chan wimod.WiModMessageInd
+	events        chan hci.HCIPacket
 	respChannels  map[uint16][]chan hci.HCIPacket
-	eventChannels []chan wimod.WiModMessageInd
+	eventChannels map[uint16][]chan hci.HCIPacket
 	noBlock       bool
 	mutex         *sync.Mutex
 }
@@ -30,12 +30,12 @@ type WiModControllerConfig struct {
 func NewController(config *WiModControllerConfig) *WiModController {
 	slipDecoder := slip.NewDecoder(config.Stream)
 	respChannels := make(map[uint16][]chan hci.HCIPacket)
-	eventChannels := []chan wimod.WiModMessageInd{}
+	eventChannels := make(map[uint16][]chan hci.HCIPacket)
 	eventBufferSize := 10
 	if config.EventBufferSize != 0 {
 		eventBufferSize = config.EventBufferSize
 	}
-	events := make(chan wimod.WiModMessageInd, eventBufferSize)
+	events := make(chan hci.HCIPacket, eventBufferSize)
 	closer := make(chan bool, 1)
 	controller := &WiModController{config.Stream, &slipDecoder, closer, events, respChannels, eventChannels, config.EventNoBlock, &sync.Mutex{}}
 	go controller.start()
@@ -67,23 +67,17 @@ func (c *WiModController) start() {
 			}
 			code := (uint16(hciPacket.Dst) << 8) + uint16(hciPacket.ID)
 			if wimod.IsAlarm(code) {
-				ind, err := wimod.DecodeInd(&hciPacket)
-				if err != nil {
-					fmt.Printf("Error: %s\n", err.Error())
-					continue
-				} else {
-					if c.noBlock && len(c.events) == cap(c.events) {
-						discarded := <-c.events
-						fmt.Printf("Event buffer full. Discarding oldest event: [%04X]\n", discarded.Code())
-					}
-					c.events <- ind
-					continue
+				if c.noBlock && len(c.events) == cap(c.events) {
+					discarded := <-c.events
+					fmt.Printf("Event buffer full. Discarding oldest event: [%02X%02X]\n", discarded.Dst, discarded.ID)
 				}
+				c.events <- hciPacket
+				continue
 			}
 			c.mutex.Lock()
 			channels, ok := c.respChannels[code]
 			if !ok {
-				fmt.Printf("Discarded packet because no listener: %v", hciPacket)
+				fmt.Printf("Discarded packet because no listener: %v\n", hciPacket)
 				continue
 			}
 			respChannel := channels[0]
@@ -99,9 +93,13 @@ func (c *WiModController) start() {
 
 func (c *WiModController) eventDispatcher() {
 	for event := range c.events {
+		code := (uint16(event.Dst) << 8) + uint16(event.ID)
 		c.mutex.Lock()
-		channels := c.eventChannels
-		c.eventChannels = nil
+		channels := c.eventChannels[code]
+		channelsAll := c.eventChannels[0]
+		c.eventChannels[0] = nil
+		c.eventChannels[code] = nil
+		channels = append(channels, channelsAll...)
 		for _, channel := range channels {
 			channel <- event
 			close(channel)
@@ -134,20 +132,35 @@ func (c *WiModController) Request(req wimod.WiModMessageReq, resp wimod.WiModMes
 		return err
 	}
 	hci := <-respChannel
-	err = wimod.DecodeResp(&hci, resp)
-	if err != nil {
-		return err
-	}
-	return nil
+	return wimod.DecodeResp(&hci, resp)
 }
 
-func (c *WiModController) ReadInd() wimod.WiModMessageInd {
-	eventChannel := make(chan wimod.WiModMessageInd)
+func (c *WiModController) ReadInd() (wimod.WiModMessageInd, error) {
+	eventChannel := make(chan hci.HCIPacket)
 	c.mutex.Lock()
-	c.eventChannels = append(c.eventChannels, eventChannel)
+	channels, ok := c.eventChannels[0]
+	if !ok {
+		channels = []chan hci.HCIPacket{}
+	}
+	channels = append(channels, eventChannel)
+	c.eventChannels[0] = channels
 	c.mutex.Unlock()
-	event := <-eventChannel
-	return event
+	hci := <-eventChannel
+	return wimod.DecodeInd(&hci)
+}
+
+func (c *WiModController) ReadSpecificInd(ind wimod.WiModMessageInd) error {
+	eventChannel := make(chan hci.HCIPacket)
+	c.mutex.Lock()
+	channels, ok := c.eventChannels[ind.Code()]
+	if !ok {
+		channels = []chan hci.HCIPacket{}
+	}
+	channels = append(channels, eventChannel)
+	c.eventChannels[ind.Code()] = channels
+	c.mutex.Unlock()
+	hci := <-eventChannel
+	return wimod.DecodeSpecificInd(&hci, ind)
 }
 
 func (c *WiModController) sendReq(req wimod.WiModMessageReq) error {
