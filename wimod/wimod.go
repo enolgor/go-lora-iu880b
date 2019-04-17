@@ -65,13 +65,7 @@ func DecodeResp(hci *hci.HCIPacket, resp WiModMessageResp) error {
 	if hci.Dst != resp.Dst() || hci.ID != resp.ID() {
 		return fmt.Errorf("Wrong DST or ID")
 	}
-	status := hci.Payload[0]
-	err := statusCheck(hci.Dst, status)
-	if err != nil {
-		return err
-	}
-	err = resp.Decode(hci.Payload[1:])
-	return err
+	return resp.Decode(hci.Payload)
 }
 
 func DecodeInd(hci *hci.HCIPacket) (WiModMessageInd, error) {

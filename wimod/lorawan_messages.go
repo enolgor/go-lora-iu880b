@@ -210,11 +210,16 @@ func (p *SendUDataResp) String() string {
 	return fmt.Sprintf("SendUDataResp[RemainingTime: %d]", p.RemainingTime)
 }
 
-func (p *SendUDataResp) Decode(bytes []byte) error {
-	if len(bytes) > 0 {
-		p.RemainingTime = binary.LittleEndian.Uint32(bytes[:4])
+func (p *SendUDataResp) Decode(payload []byte) error {
+	switch payload[0] {
+	case LORAWAN_STATUS_OK:
+		return nil
+	case LORAWAN_STATUS_CHANNEL_BLOCKED:
+		p.RemainingTime = binary.LittleEndian.Uint32(payload[1:5])
+		return fmt.Errorf("LORAWAN_STATUS_CHANNEL_BLOCKED: Remaining Time: %d", p.RemainingTime)
+	default:
+		return lorawanStatusCheck(payload[0])
 	}
-	return nil
 }
 
 // LORAWAN_MSG_SEND_UDATA_TX_IND

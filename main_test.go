@@ -25,9 +25,9 @@ func TestSendUData(t *testing.T) {
 	udataResp := wimod.NewSendUDataResp()
 	err = controller.Request(udataReq, udataResp)
 	if err != nil {
+		fmt.Println(udataResp)
 		log.Fatal(err)
 	}
-	fmt.Println(udataResp)
 	udataTxInd := wimod.NewSendUDataTxInd()
 	err = controller.ReadSpecificInd(udataTxInd)
 	if err != nil {

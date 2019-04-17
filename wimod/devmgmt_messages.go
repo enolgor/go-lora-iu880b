@@ -42,8 +42,8 @@ func (p *PingResp) String() string {
 	return fmt.Sprintf("PingResp[]")
 }
 
-func (p *PingResp) Decode(bytes []byte) error {
-	return nil
+func (p *PingResp) Decode(payload []byte) error {
+	return devMgmtStatusCheck(payload[0])
 }
 
 // DEVMGMT_MSG_GET_DEVICE_INFO_REQ
@@ -85,7 +85,12 @@ func (p *GetDeviceInfoResp) String() string {
 	return fmt.Sprintf("GetDeviceInfoResp[ModuleType: 0x%X, DeviceAddress: 0x%X, DeviceID: 0x%X]", p.ModuleType, p.DeviceAddress, p.DeviceID)
 }
 
-func (p *GetDeviceInfoResp) Decode(bytes []byte) error {
+func (p *GetDeviceInfoResp) Decode(payload []byte) error {
+	err := devMgmtStatusCheck(payload[0])
+	if err != nil {
+		return err
+	}
+	bytes := payload[1:]
 	p.ModuleType = bytes[0]
 	p.DeviceAddress = binary.LittleEndian.Uint32(bytes[1:5])
 	p.DeviceID = binary.LittleEndian.Uint32(bytes[5:9])
@@ -133,7 +138,12 @@ func (p *GetFWInfoResp) String() string {
 	return fmt.Sprintf("GetFWInfoResp[MinorVersion: %d, MajorVersion: %d, Build: %d, BuildDate: %s, FirmwareImage: %s]", p.MinorVersion, p.MajorVersion, p.Build, p.BuildDate, p.FirmwareImage)
 }
 
-func (p *GetFWInfoResp) Decode(bytes []byte) error {
+func (p *GetFWInfoResp) Decode(payload []byte) error {
+	err := devMgmtStatusCheck(payload[0])
+	if err != nil {
+		return err
+	}
+	bytes := payload[1:]
 	p.MinorVersion = bytes[0]
 	p.MajorVersion = bytes[1]
 	p.Build = binary.LittleEndian.Uint16(bytes[2:4])
@@ -178,8 +188,8 @@ func (p *ResetResp) String() string {
 	return fmt.Sprintf("ResetResp[]")
 }
 
-func (p *ResetResp) Decode(bytes []byte) error {
-	return nil
+func (p *ResetResp) Decode(payload []byte) error {
+	return devMgmtStatusCheck(payload[0])
 }
 
 // DEVMGMT_MSG_SET_OPMODE_REQ
@@ -220,8 +230,8 @@ func (p *SetOPModeResp) String() string {
 	return fmt.Sprintf("SetOPModeResp[]")
 }
 
-func (p *SetOPModeResp) Decode(bytes []byte) error {
-	return nil
+func (p *SetOPModeResp) Decode(payload []byte) error {
+	return devMgmtStatusCheck(payload[0])
 }
 
 // DEVMGMT_MSG_GET_OPMODE_REQ
@@ -261,8 +271,12 @@ func (p *GetOPModeResp) String() string {
 	return fmt.Sprintf("GetOPModeResp[Mode: %02X]", p.Mode)
 }
 
-func (p *GetOPModeResp) Decode(bytes []byte) error {
-	p.Mode = bytes[0]
+func (p *GetOPModeResp) Decode(payload []byte) error {
+	err := devMgmtStatusCheck(payload[0])
+	if err != nil {
+		return err
+	}
+	p.Mode = payload[1]
 	return nil
 }
 
@@ -306,8 +320,8 @@ func (p *SetRTCResp) String() string {
 	return fmt.Sprintf("SetRTCResp[]")
 }
 
-func (p *SetRTCResp) Decode(bytes []byte) error {
-	return nil
+func (p *SetRTCResp) Decode(payload []byte) error {
+	return devMgmtStatusCheck(payload[0])
 }
 
 // DEVMGMT_MSG_GET_RTC_REQ
@@ -347,8 +361,12 @@ func (p *GetRTCResp) String() string {
 	return fmt.Sprintf("GetRTCResp[Time: %s]", p.Time)
 }
 
-func (p *GetRTCResp) Decode(bytes []byte) error {
-	p.Time = DecodeRTCTime(binary.LittleEndian.Uint32(bytes))
+func (p *GetRTCResp) Decode(payload []byte) error {
+	err := devMgmtStatusCheck(payload[0])
+	if err != nil {
+		return err
+	}
+	p.Time = DecodeRTCTime(binary.LittleEndian.Uint32(payload[1:]))
 	return nil
 }
 
@@ -405,7 +423,12 @@ func (p *GetDeviceStatusResp) String() string {
 	return fmt.Sprintf("GetDeviceStatusResp[SystemTickResolution: %dms, SystemTicks: %d, TargetTime: %s, NVMStatus: %016bb, BatteryLevel: %dmV, ExtraStatus: 0x%04X, TxU-Data: %d, TxC-Data: %d, TxError: %d, Rx1U-Data: %d, Rx1C-Data: %d, Rx1MIC-Error: %d, Rx2U-Data: %d, Rx2C-Data: %d, Rx2MIC-Error: %d, TxJoin: %d, RxAccept: %d]", p.SystemTickResolution, p.SystemTicks, p.TargetTime, p.NVMStatus, p.BatteryLevel, p.ExtraStatus, p.TxUData, p.TxCData, p.TxError, p.Rx1UData, p.Rx1CData, p.Rx1MICError, p.Rx2UData, p.Rx2CData, p.Rx2MICError, p.TxJoin, p.RxAccept)
 }
 
-func (p *GetDeviceStatusResp) Decode(bytes []byte) error {
+func (p *GetDeviceStatusResp) Decode(payload []byte) error {
+	err := devMgmtStatusCheck(payload[0])
+	if err != nil {
+		return err
+	}
+	bytes := payload[1:]
 	p.SystemTickResolution = bytes[0]
 	p.SystemTicks = binary.LittleEndian.Uint32(bytes[1:5])
 	p.TargetTime = DecodeRTCTime(binary.LittleEndian.Uint32(bytes[5:9]))
@@ -480,8 +503,8 @@ func (p *SetRTCAlarmResp) String() string {
 	return fmt.Sprintf("SetRTCAlarmResp[]")
 }
 
-func (p *SetRTCAlarmResp) Decode(bytes []byte) error {
-	return nil
+func (p *SetRTCAlarmResp) Decode(payload []byte) error {
+	return devMgmtStatusCheck(payload[0])
 }
 
 // DEVMGMT_MSG_CLEAR_RTC_ALARM_REQ
@@ -520,8 +543,8 @@ func (p *ClearRTCAlarmResp) String() string {
 	return fmt.Sprintf("ClearRTCAlarmResp[]")
 }
 
-func (p *ClearRTCAlarmResp) Decode(bytes []byte) error {
-	return nil
+func (p *ClearRTCAlarmResp) Decode(payload []byte) error {
+	return devMgmtStatusCheck(payload[0])
 }
 
 // DEVMGMT_MSG_GET_RTC_ALARM_REQ
@@ -565,7 +588,12 @@ func (p *GetRTCAlarmResp) String() string {
 	return fmt.Sprintf("GetRTCAlarmResp[Status: %X, Type: %X, Hour: %d, Minutes: %d, Seconds: %d]", p.AlarmStatus, p.AlarmType, p.Hour, p.Minutes, p.Seconds)
 }
 
-func (p *GetRTCAlarmResp) Decode(bytes []byte) error {
+func (p *GetRTCAlarmResp) Decode(payload []byte) error {
+	err := devMgmtStatusCheck(payload[0])
+	if err != nil {
+		return err
+	}
+	bytes := payload[1:]
 	p.AlarmStatus = bytes[0]
 	p.AlarmType = bytes[1]
 	p.Hour = bytes[2]
@@ -590,7 +618,7 @@ func (p *RTCAlarmInd) String() string {
 	return fmt.Sprintf("RTCAlarmInd[Status: 0x%02X]", p.status)
 }
 
-func (p *RTCAlarmInd) Decode(bytes []byte) error {
-	p.status = bytes[0]
+func (p *RTCAlarmInd) Decode(payload []byte) error {
+	p.status = payload[0]
 	return nil
 }

@@ -1,0 +1,47 @@
+package wimod
+
+import "fmt"
+
+func devMgmtStatusCheck(status byte) error {
+	switch status {
+	case DEVMGMT_STATUS_OK:
+		return nil
+	case DEVMGMT_STATUS_ERROR:
+		return fmt.Errorf("DEVMGMT_STATUS_ERROR")
+	case DEVMGMT_STATUS_CMD_NOT_SUPPORTED:
+		return fmt.Errorf("DEVMGMT_STATUS_ERROR")
+	case DEVMGMT_STATUS_WRONG_PARAMETER:
+		return fmt.Errorf("DEVMGMT_STATUS_ERROR")
+	}
+	return fmt.Errorf("UNKNOWN_DEVMGMT_ERROR")
+}
+
+func lorawanStatusCheck(status byte) error {
+	switch status {
+	case LORAWAN_STATUS_OK:
+		return nil
+	case LORAWAN_STATUS_ERROR:
+		return fmt.Errorf("LORAWAN_STATUS_ERROR")
+	case LORAWAN_STATUS_CMD_NOT_SUPPORTED:
+		return fmt.Errorf("LORAWAN_STATUS_CMD_NOT_SUPPORTED")
+	case LORAWAN_STATUS_WRONG_PARAMETER:
+		return fmt.Errorf("LORAWAN_STATUS_WRONG_PARAMETER")
+	case LORAWAN_STATUS_WRONG_DEVICE_MODE:
+		return fmt.Errorf("LORAWAN_STATUS_WRONG_DEVICE_MODE")
+	case LORAWAN_STATUS_DEVICE_NOT_ACTIVATED:
+		return fmt.Errorf("LORAWAN_STATUS_DEVICE_NOT_ACTIVATED")
+	case LORAWAN_STATUS_DEVICE_BUSY:
+		return fmt.Errorf("LORAWAN_STATUS_DEVICE_BUSY")
+	case LORAWAN_STATUS_QUEUE_FULL:
+		return fmt.Errorf("LORAWAN_STATUS_QUEUE_FULL")
+	case LORAWAN_STATUS_LENGTH_ERROR:
+		return fmt.Errorf("LORAWAN_STATUS_LENGTH_ERROR")
+	case LORAWAN_STATUS_NO_FACTORY_SETTINGS:
+		return fmt.Errorf("LORAWAN_STATUS_NO_FACTORY_SETTINGS")
+	case LORAWAN_STATUS_CHANNEL_BLOCKED:
+		return fmt.Errorf("LORAWAN_STATUS_CHANNEL_BLOCKED")
+	case LORAWAN_STATUS_CHANNEL_NOT_AVAILABLE:
+		return fmt.Errorf("LORAWAN_STATUS_CHANNEL_NOT_AVAILABLE")
+	}
+	return fmt.Errorf("UNKNOWN_LORAWAN_ERROR")
+}
