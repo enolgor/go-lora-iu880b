@@ -41,6 +41,11 @@ const (
 )
 
 const (
+	DEVMGMT_MSG_RTC_ALARM_IND_STATUS_OK    byte = 0x00
+	DEVMGMT_MSG_RTC_ALARM_IND_STATUS_ERROR byte = 0x01
+)
+
+const (
 	DEVMGMT_OPMODE_STANDARD byte = 0x00
 	DEVMGMT_OPMODE_CUSTOMER byte = 0x03
 )
@@ -111,9 +116,9 @@ const (
 )
 
 const (
-	MSG_REQ byte = 0x00
-	MSG_RSP byte = 0x01
-	MSG_IND byte = 0x02
+	LORAWAN_MSG_JOIN_NETWORK_TX_IND_STATUS_OK            = 0x00
+	LORAWAN_MSG_JOIN_NETWORK_TX_IND_STATUS_OK_ATTACHMENT = 0x01
+	LORAWAN_MSG_JOIN_NETWORK_TX_IND_STATUS_ERROR         = 0x02
 )
 
 var alarmConstructors = map[uint16]func() WiModMessageInd{

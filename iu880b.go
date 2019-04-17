@@ -3,6 +3,7 @@ package iu880b
 import (
 	"fmt"
 	"io"
+	"sync"
 
 	"./hci"
 	"./slip"
@@ -10,12 +11,14 @@ import (
 )
 
 type WiModController struct {
-	rwc          io.ReadWriteCloser
-	slipDecoder  *slip.SlipDecoder
-	closer       chan bool
-	events       chan wimod.WiModMessageInd
-	respChannels map[uint16][]chan hci.HCIPacket
-	noBlock      bool
+	rwc           io.ReadWriteCloser
+	slipDecoder   *slip.SlipDecoder
+	closer        chan bool
+	events        chan wimod.WiModMessageInd
+	respChannels  map[uint16][]chan hci.HCIPacket
+	eventChannels []chan wimod.WiModMessageInd
+	noBlock       bool
+	mutex         *sync.Mutex
 }
 
 type WiModControllerConfig struct {
@@ -27,14 +30,16 @@ type WiModControllerConfig struct {
 func NewController(config *WiModControllerConfig) *WiModController {
 	slipDecoder := slip.NewDecoder(config.Stream)
 	respChannels := make(map[uint16][]chan hci.HCIPacket)
+	eventChannels := []chan wimod.WiModMessageInd{}
 	eventBufferSize := 10
 	if config.EventBufferSize != 0 {
 		eventBufferSize = config.EventBufferSize
 	}
 	events := make(chan wimod.WiModMessageInd, eventBufferSize)
 	closer := make(chan bool, 1)
-	controller := &WiModController{config.Stream, &slipDecoder, closer, events, respChannels, config.EventNoBlock}
+	controller := &WiModController{config.Stream, &slipDecoder, closer, events, respChannels, eventChannels, config.EventNoBlock, &sync.Mutex{}}
 	go controller.start()
+	go controller.eventDispatcher()
 	return controller
 }
 
@@ -75,6 +80,7 @@ func (c *WiModController) start() {
 					continue
 				}
 			}
+			c.mutex.Lock()
 			channels, ok := c.respChannels[code]
 			if !ok {
 				fmt.Printf("Discarded packet because no listener: %v", hciPacket)
@@ -86,7 +92,21 @@ func (c *WiModController) start() {
 			channels[0] = nil
 			channels = channels[1:]
 			c.respChannels[code] = channels
+			c.mutex.Unlock()
 		}
+	}
+}
+
+func (c *WiModController) eventDispatcher() {
+	for event := range c.events {
+		c.mutex.Lock()
+		channels := c.eventChannels
+		c.eventChannels = nil
+		for _, channel := range channels {
+			channel <- event
+			close(channel)
+		}
+		c.mutex.Unlock()
 	}
 }
 
@@ -100,16 +120,19 @@ func (c *WiModController) Close() {
 
 func (c *WiModController) Request(req wimod.WiModMessageReq, resp wimod.WiModMessageResp) error {
 	respChannel := make(chan hci.HCIPacket)
+	c.mutex.Lock()
 	channels, ok := c.respChannels[resp.Code()]
 	if !ok {
 		channels = []chan hci.HCIPacket{}
 	}
+	channels = append(channels, respChannel)
+	c.respChannels[resp.Code()] = channels
+	c.mutex.Unlock()
+
 	err := c.sendReq(req)
 	if err != nil {
 		return err
 	}
-	channels = append(channels, respChannel)
-	c.respChannels[resp.Code()] = channels
 	hci := <-respChannel
 	err = wimod.DecodeResp(&hci, resp)
 	if err != nil {
@@ -119,7 +142,12 @@ func (c *WiModController) Request(req wimod.WiModMessageReq, resp wimod.WiModMes
 }
 
 func (c *WiModController) ReadInd() wimod.WiModMessageInd {
-	return <-c.events
+	eventChannel := make(chan wimod.WiModMessageInd)
+	c.mutex.Lock()
+	c.eventChannels = append(c.eventChannels, eventChannel)
+	c.mutex.Unlock()
+	event := <-eventChannel
+	return event
 }
 
 func (c *WiModController) sendReq(req wimod.WiModMessageReq) error {

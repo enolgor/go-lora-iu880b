@@ -144,7 +144,43 @@ func (p *GetFWInfoResp) Decode(bytes []byte) error {
 
 // DEVMGMT_MSG_RESET_REQ
 
+type ResetReq struct {
+	wimodMessageImpl
+}
+
+func NewResetReq() *ResetReq {
+	req := &ResetReq{}
+	req.code = DEVMGMT_MSG_RESET_REQ
+	return req
+}
+
+func (p *ResetReq) String() string {
+	return fmt.Sprintf("ResetReq[]")
+}
+
+func (p *ResetReq) Encode() ([]byte, error) {
+	return []byte{}, nil
+}
+
 // DEVMGMT_MSG_RESET_RSP
+
+type ResetResp struct {
+	wimodMessageImpl
+}
+
+func NewResetResp() *ResetResp {
+	resp := &ResetResp{}
+	resp.code = DEVMGMT_MSG_RESET_RSP
+	return resp
+}
+
+func (p *ResetResp) String() string {
+	return fmt.Sprintf("ResetResp[]")
+}
+
+func (p *ResetResp) Decode(bytes []byte) error {
+	return nil
+}
 
 // DEVMGMT_MSG_SET_OPMODE_REQ
 
@@ -541,7 +577,7 @@ func (p *GetRTCAlarmResp) Decode(bytes []byte) error {
 // DEVMGMT_MSG_RTC_ALARM_IND
 
 type RTCAlarmInd struct {
-	wimodMessageImpl
+	wimodMessageIndImpl
 }
 
 func NewRTCAlarmInd() *RTCAlarmInd {
@@ -551,9 +587,10 @@ func NewRTCAlarmInd() *RTCAlarmInd {
 }
 
 func (p *RTCAlarmInd) String() string {
-	return fmt.Sprintf("RTCAlarmInd[]")
+	return fmt.Sprintf("RTCAlarmInd[Status: 0x%02X]", p.status)
 }
 
 func (p *RTCAlarmInd) Decode(bytes []byte) error {
+	p.status = bytes[0]
 	return nil
 }

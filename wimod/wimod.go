@@ -38,9 +38,19 @@ type WiModMessageResp interface {
 	Decode(bytes []byte) error
 }
 
+type wimodMessageIndImpl struct {
+	wimodMessageImpl
+	status byte
+}
+
+func (w *wimodMessageIndImpl) Status() byte {
+	return w.status
+}
+
 type WiModMessageInd interface {
 	WiModMessage
 	Decode(bytes []byte) error
+	Status() byte
 }
 
 func EncodeReq(req WiModMessageReq) (*hci.HCIPacket, error) {
@@ -75,7 +85,7 @@ func DecodeInd(hci *hci.HCIPacket) (WiModMessageInd, error) {
 		return nil, err
 	}
 	ind := alarmConstructors[code]()
-	ind.Decode(hci.Payload[1:])
+	ind.Decode(hci.Payload) //INCLUDE STATUS
 	return ind, nil
 }
 

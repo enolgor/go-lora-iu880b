@@ -13,6 +13,63 @@ import (
 	"github.com/tarm/serial"
 )
 
+func TestReactivate(t *testing.T) {
+	c := &serial.Config{Name: "COM3", Baud: 115200, Size: 8, Parity: serial.ParityNone, StopBits: 1}
+	s, err := serial.OpenPort(c)
+	if err != nil {
+		log.Fatal(err)
+	}
+	config := &WiModControllerConfig{Stream: s}
+	controller := NewController(config)
+	reactReq := wimod.NewReactivateDeviceReq()
+	reactResp := wimod.NewReactivateDeviceResp()
+	err = controller.Request(reactReq, reactResp)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(reactResp)
+	time.Sleep(5 * time.Second)
+	controller.Close()
+}
+func TestReset(t *testing.T) {
+	c := &serial.Config{Name: "COM3", Baud: 115200, Size: 8, Parity: serial.ParityNone, StopBits: 1}
+	s, err := serial.OpenPort(c)
+	if err != nil {
+		log.Fatal(err)
+	}
+	config := &WiModControllerConfig{Stream: s}
+	controller := NewController(config)
+	go func() {
+		ind := controller.ReadInd()
+		fmt.Printf("Received event: %v\n", ind)
+	}()
+	resetReq := wimod.NewResetReq()
+	resetResp := wimod.NewResetResp()
+	err = controller.Request(resetReq, resetResp)
+	if err != nil {
+		log.Fatal(err)
+	}
+	time.Sleep(3 * time.Second)
+}
+func TestEvents(t *testing.T) {
+	c := &serial.Config{Name: "COM3", Baud: 115200, Size: 8, Parity: serial.ParityNone, StopBits: 1}
+	s, err := serial.OpenPort(c)
+	if err != nil {
+		log.Fatal(err)
+	}
+	config := &WiModControllerConfig{Stream: s}
+	controller := NewController(config)
+	setAlarmFromNow(controller, 2*time.Second)
+	for i := 0; i < 10; i++ {
+		go func(id int) {
+			ind := controller.ReadInd()
+			fmt.Printf("Received from routine %d: %v\n", id, ind)
+		}(i)
+	}
+	time.Sleep(5 * time.Second)
+	controller.Close()
+}
+
 func TestOpMode(t *testing.T) {
 	c := &serial.Config{Name: "COM3", Baud: 115200, Size: 8, Parity: serial.ParityNone, StopBits: 1}
 	s, err := serial.OpenPort(c)
@@ -90,9 +147,10 @@ func TestAlarm(t *testing.T) {
 	controller := NewController(config)
 	go func() {
 		ind := controller.ReadInd() // print events
+		fmt.Println(ind.Status())
 		fmt.Println(ind)
 	}()
-
+	clearAlarm(controller)
 	requestAndPrintAlarm(controller) // 0s
 
 	setAlarmFromNow(controller, 5*time.Second) // alarm in 5s
@@ -180,6 +238,23 @@ func TestBlocked(t *testing.T) {
 	controller.Close()
 }
 
+func TestInfo(t *testing.T) {
+	c := &serial.Config{Name: "COM3", Baud: 115200, Size: 8, Parity: serial.ParityNone, StopBits: 1}
+	s, err := serial.OpenPort(c)
+	if err != nil {
+		log.Fatal(err)
+	}
+	config := &WiModControllerConfig{Stream: s}
+	controller := NewController(config)
+	infoReq := wimod.NewGetDeviceInfoReq()
+	infoResp := wimod.NewGetDeviceInfoResp()
+	err = controller.Request(infoReq, infoResp)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(infoResp)
+}
+
 func TestCRC(t *testing.T) {
 	data := []byte{0x01, 0x01, 0x34, 0xFF, 0x56}
 	crcval := crc.CalcCRC16(data)
@@ -208,7 +283,7 @@ func TestSLIP(t *testing.T) {
 	t.Log("Byte slice encoded and decoded successfully")
 }
 
-func TestINFO(t *testing.T) {
+func TestINFOSlip(t *testing.T) {
 	infoReq := wimod.GetDeviceInfoReq{}
 	hci, err := wimod.EncodeReq(&infoReq)
 	if err != nil {
@@ -225,4 +300,12 @@ func TestTime(t *testing.T) {
 	fmt.Printf("%d\n", rtc)
 	now2 := wimod.DecodeRTCTime(rtc)
 	fmt.Printf("%s", now2)
+}
+
+func TestKey(t *testing.T) {
+	k := wimod.DecodeKey([]byte{0xAA, 0x23, 0x24, 0xFF, 0xAA, 0x23, 0x24, 0x5D, 0x44})
+	fmt.Println(k)
+	bytes := wimod.EncodeKey(&k)
+	fmt.Printf("0x%02X\n", bytes)
+	fmt.Println(wimod.DecodeKey(bytes))
 }

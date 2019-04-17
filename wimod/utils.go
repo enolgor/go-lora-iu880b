@@ -1,6 +1,10 @@
 package wimod
 
-import "time"
+import (
+	"encoding/binary"
+	"fmt"
+	"time"
+)
 
 func EncodeRTCTime(t time.Time) uint32 {
 	month := int(t.Month())
@@ -27,4 +31,44 @@ func DecodeRTCTime(rtc uint32) time.Time {
 	second := int(rtc & 0x3F)
 	year := 2000 + int((rtc>>26)&0x3F)
 	return time.Date(year, time.Month(month), day, hour, minute, second, 0, time.UTC)
+}
+
+type EUI uint64
+
+func EncodeEUI(eui *EUI) []byte {
+	bytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(bytes, uint64(*eui))
+	return bytes
+}
+
+func DecodeEUI(bytes []byte) EUI {
+	euibytes := make([]byte, 8)
+	euibytes = append(euibytes[:8-len(bytes)], bytes...)
+	return EUI(binary.BigEndian.Uint64(euibytes))
+}
+
+func (e EUI) String() string {
+	return fmt.Sprintf("0x%016X", uint64(e))
+}
+
+type Key [2]uint64
+
+func EncodeKey(key *Key) []byte {
+	bytes := make([]byte, 16)
+	binary.BigEndian.PutUint64(bytes[:8], uint64(key[0]))
+	binary.BigEndian.PutUint64(bytes[8:], uint64(key[1]))
+	return bytes
+}
+
+func DecodeKey(bytes []byte) Key {
+	keybytes := make([]byte, 16)
+	keybytes = append(keybytes[:16-len(bytes)], bytes...)
+	key := [2]uint64{}
+	key[0] = binary.BigEndian.Uint64(keybytes[:8])
+	key[1] = binary.BigEndian.Uint64(keybytes[8:])
+	return Key(key)
+}
+
+func (k Key) String() string {
+	return fmt.Sprintf("0x%016X%016X", k[0], k[1])
 }
