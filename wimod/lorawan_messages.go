@@ -49,8 +49,8 @@ func (p *SetJoinParamResp) String() string {
 	return fmt.Sprintf("SetJoinParamResp[]")
 }
 
-func (p *SetJoinParamResp) Decode(bytes []byte) error {
-	return nil
+func (p *SetJoinParamResp) Decode(payload []byte) error {
+	return lorawanStatusCheck(payload[0])
 }
 
 // LORAWAN_MSG_JOIN_NETWORK_REQ
@@ -89,8 +89,8 @@ func (p *JoinNetworkResp) String() string {
 	return fmt.Sprintf("JoinNetworkResp[]")
 }
 
-func (p *JoinNetworkResp) Decode(bytes []byte) error {
-	return nil
+func (p *JoinNetworkResp) Decode(payload []byte) error {
+	return lorawanStatusCheck(payload[0])
 }
 
 // LORAWAN_MSG_JOIN_NETWORK_TX_IND
@@ -307,19 +307,105 @@ func (p *ReactivateDeviceResp) String() string {
 	return fmt.Sprintf("ReactivateDeviceResp[Address: 0x%08X]", p.Address)
 }
 
-func (p *ReactivateDeviceResp) Decode(bytes []byte) error {
-	p.Address = binary.LittleEndian.Uint32(bytes[:4])
+func (p *ReactivateDeviceResp) Decode(payload []byte) error {
+	err := devMgmtStatusCheck(payload[0])
+	if err != nil {
+		return err
+	}
+	p.Address = binary.LittleEndian.Uint32(payload[1:5])
 	return nil
 }
 
 // LORAWAN_MSG_DEACTIVATE_DEVICE_REQ
+
+type DeactivateDeviceReq struct {
+	wimodMessageImpl
+}
+
+func NewDeactivateDeviceReq() *DeactivateDeviceReq {
+	req := &DeactivateDeviceReq{}
+	req.code = LORAWAN_MSG_DEACTIVATE_DEVICE_REQ
+	return req
+}
+
+func (p *DeactivateDeviceReq) String() string {
+	return fmt.Sprintf("DeactivateDeviceReq[]")
+}
+
+func (p *DeactivateDeviceReq) Encode() ([]byte, error) {
+	return []byte{}, nil
+}
+
 // LORAWAN_MSG_DEACTIVATE_DEVICE_RSP
+
+type DeactivateDeviceResp struct {
+	wimodMessageImpl
+}
+
+func NewDeactivateDeviceResp() *DeactivateDeviceResp {
+	resp := &DeactivateDeviceResp{}
+	resp.code = LORAWAN_MSG_DEACTIVATE_DEVICE_RSP
+	return resp
+}
+
+func (p *DeactivateDeviceResp) String() string {
+	return fmt.Sprintf("DeactivateDeviceResp[]")
+}
+
+func (p *DeactivateDeviceResp) Decode(payload []byte) error {
+	return devMgmtStatusCheck(payload[0])
+}
+
 // LORAWAN_MSG_FACTORY_RESET_REQ
 // LORAWAN_MSG_FACTORY_RESET_RSP
 // LORAWAN_MSG_SET_DEVICE_EUI_REQ
 // LORAWAN_MSG_SET_DEVICE_EUI_RSP
 // LORAWAN_MSG_GET_DEVICE_EUI_REQ
+
+type GetDeviceEUIReq struct {
+	wimodMessageImpl
+}
+
+func NewGetDeviceEUIReq() *GetDeviceEUIReq {
+	req := &GetDeviceEUIReq{}
+	req.code = LORAWAN_MSG_GET_DEVICE_EUI_REQ
+	return req
+}
+
+func (p *GetDeviceEUIReq) String() string {
+	return fmt.Sprintf("GetDeviceEUIReq[]")
+}
+
+func (p *GetDeviceEUIReq) Encode() ([]byte, error) {
+	return []byte{}, nil
+}
+
 // LORAWAN_MSG_GET_DEVICE_EUI_RSP
+
+type GetDeviceEUIResp struct {
+	wimodMessageImpl
+	EUI EUI
+}
+
+func NewGetDeviceEUIResp() *GetDeviceEUIResp {
+	resp := &GetDeviceEUIResp{}
+	resp.code = LORAWAN_MSG_GET_DEVICE_EUI_RSP
+	return resp
+}
+
+func (p *GetDeviceEUIResp) String() string {
+	return fmt.Sprintf("GetDeviceEUIResp[EUI: %v]", p.EUI)
+}
+
+func (p *GetDeviceEUIResp) Decode(payload []byte) error {
+	err := devMgmtStatusCheck(payload[0])
+	if err != nil {
+		return err
+	}
+	p.EUI = DecodeEUI(payload[1:])
+	return nil
+}
+
 // LORAWAN_MSG_GET_NWK_STATUS_REQ
 
 type GetNwkStatusReq struct {
@@ -361,7 +447,12 @@ func (p *GetNwkStatusResp) String() string {
 	return fmt.Sprintf("GetNwkStatusResp[NetworkStatus: 0x%02X, Address: 0x%08X, DataRateIdx: %d, PowerLevel: %d, MaxPayloadSize: %d]", p.NetworkStatus, p.Address, p.DataRateIdx, p.PowerLevel, p.MaxPayloadSize)
 }
 
-func (p *GetNwkStatusResp) Decode(bytes []byte) error {
+func (p *GetNwkStatusResp) Decode(payload []byte) error {
+	err := devMgmtStatusCheck(payload[0])
+	if err != nil {
+		return err
+	}
+	bytes := payload[1:]
 	p.NetworkStatus = bytes[0]
 	p.Address = binary.LittleEndian.Uint32(bytes[1:5])
 	p.DataRateIdx = bytes[5]

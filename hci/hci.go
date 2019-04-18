@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 
-	"../crc"
+	"github.com/enolgor/wimod-lorawan-endnode-controller/crc"
 )
 
 type HCIPacket struct {

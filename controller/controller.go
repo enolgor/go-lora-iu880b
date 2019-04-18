@@ -1,13 +1,13 @@
-package iu880b
+package controller
 
 import (
 	"fmt"
 	"io"
 	"sync"
 
-	"./hci"
-	"./slip"
-	"./wimod"
+	"github.com/enolgor/wimod-lorawan-endnode-controller/hci"
+	"github.com/enolgor/wimod-lorawan-endnode-controller/slip"
+	"github.com/enolgor/wimod-lorawan-endnode-controller/wimod"
 )
 
 type WiModController struct {
