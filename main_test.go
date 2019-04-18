@@ -18,6 +18,23 @@ func serialConfig() *serial.Config {
 	return &serial.Config{Name: "COM3", Baud: 115200, Size: 8, Parity: serial.ParityNone, StopBits: 1}
 }
 
+func TestDeactivate(t *testing.T) {
+	c := serialConfig()
+	s, err := serial.OpenPort(c)
+	if err != nil {
+		log.Fatal(err)
+	}
+	config := &controller.WiModControllerConfig{Stream: s}
+	controller := controller.NewController(config)
+	deactivateReq := wimod.NewDeactivateDeviceReq()
+	deactivateResp := wimod.NewDeactivateDeviceResp()
+	err = controller.Request(deactivateReq, deactivateResp)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(deactivateResp)
+}
+
 func TestEUI(t *testing.T) {
 	c := serialConfig()
 	s, err := serial.OpenPort(c)
@@ -66,6 +83,7 @@ func TestJoin(t *testing.T) {
 	}
 	config := &controller.WiModControllerConfig{Stream: s}
 	controller := controller.NewController(config)
+	requestNetworkStatusAndPrint(controller)
 	EUI := wimod.DecodeEUI([]byte{0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x11, 0x22})
 	Key := wimod.DecodeKey([]byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10})
 	joinParamReq := wimod.NewSetJoinParamReq(EUI, Key)
@@ -82,6 +100,7 @@ func TestJoin(t *testing.T) {
 		log.Fatal(err)
 	}
 	fmt.Println("Join Command Sent")
+	requestNetworkStatusAndPrint(controller)
 	joinTxEvent := wimod.NewJoinNetworkTxInd()
 	joinedEvent := wimod.NewJoinNetworkInd()
 	err = controller.ReadSpecificInd(joinTxEvent)
@@ -94,6 +113,7 @@ func TestJoin(t *testing.T) {
 		log.Fatal(err)
 	}
 	fmt.Println(joinedEvent)
+	requestNetworkStatusAndPrint(controller)
 }
 
 func TestNetworkStatus(t *testing.T) {
@@ -104,9 +124,13 @@ func TestNetworkStatus(t *testing.T) {
 	}
 	config := &controller.WiModControllerConfig{Stream: s}
 	controller := controller.NewController(config)
+	requestNetworkStatusAndPrint(controller)
+}
+
+func requestNetworkStatusAndPrint(controller *controller.WiModController) {
 	nwkStatusReq := wimod.NewGetNwkStatusReq()
 	nwkStatusResp := wimod.NewGetNwkStatusResp()
-	err = controller.Request(nwkStatusReq, nwkStatusResp)
+	err := controller.Request(nwkStatusReq, nwkStatusResp)
 	if err != nil {
 		log.Fatal(err)
 	}

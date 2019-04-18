@@ -36,7 +36,7 @@ func (p *SetJoinParamReq) Encode() ([]byte, error) {
 // LORAWAN_MSG_SET_JOIN_PARAM_RSP
 
 type SetJoinParamResp struct {
-	wimodMessageImpl
+	wimodMessageStatusImpl
 }
 
 func NewSetJoinParamResp() *SetJoinParamResp {
@@ -50,7 +50,8 @@ func (p *SetJoinParamResp) String() string {
 }
 
 func (p *SetJoinParamResp) Decode(payload []byte) error {
-	return lorawanStatusCheck(payload[0])
+	p.status = payload[0]
+	return lorawanStatusCheck(p.status)
 }
 
 // LORAWAN_MSG_JOIN_NETWORK_REQ
@@ -76,7 +77,7 @@ func (p *JoinNetworkReq) Encode() ([]byte, error) {
 // LORAWAN_MSG_JOIN_NETWORK_RSP
 
 type JoinNetworkResp struct {
-	wimodMessageImpl
+	wimodMessageStatusImpl
 }
 
 func NewJoinNetworkResp() *JoinNetworkResp {
@@ -90,13 +91,14 @@ func (p *JoinNetworkResp) String() string {
 }
 
 func (p *JoinNetworkResp) Decode(payload []byte) error {
-	return lorawanStatusCheck(payload[0])
+	p.status = payload[0]
+	return lorawanStatusCheck(p.status)
 }
 
 // LORAWAN_MSG_JOIN_NETWORK_TX_IND
 
 type JoinNetworkTxInd struct {
-	wimodMessageIndImpl
+	wimodMessageStatusImpl
 	ChannelIdx       byte
 	DataRateIdx      byte
 	NumTxPackets     byte
@@ -132,7 +134,7 @@ func (p *JoinNetworkTxInd) Decode(bytes []byte) error {
 // LORAWAN_MSG_JOIN_NETWORK_IND
 
 type JoinNetworkInd struct {
-	wimodMessageIndImpl
+	wimodMessageStatusImpl
 	Address     uint32
 	ChannelIdx  byte
 	DataRateIdx byte
@@ -196,7 +198,7 @@ func (p *SendUDataReq) Encode() ([]byte, error) {
 // LORAWAN_MSG_SEND_UDATA_RSP
 
 type SendUDataResp struct {
-	wimodMessageImpl
+	wimodMessageStatusImpl
 	RemainingTime uint32
 }
 
@@ -211,7 +213,8 @@ func (p *SendUDataResp) String() string {
 }
 
 func (p *SendUDataResp) Decode(payload []byte) error {
-	switch payload[0] {
+	p.status = payload[0]
+	switch p.status {
 	case LORAWAN_STATUS_OK:
 		return nil
 	case LORAWAN_STATUS_CHANNEL_BLOCKED:
@@ -225,7 +228,7 @@ func (p *SendUDataResp) Decode(payload []byte) error {
 // LORAWAN_MSG_SEND_UDATA_TX_IND
 
 type SendUDataTxInd struct {
-	wimodMessageIndImpl
+	wimodMessageStatusImpl
 	ChannelIdx       byte
 	DataRateIdx      byte
 	NumTxPackets     byte
@@ -293,7 +296,7 @@ func (p *ReactivateDeviceReq) Encode() ([]byte, error) {
 // LORAWAN_MSG_REACTIVATE_DEVICE_RSP
 
 type ReactivateDeviceResp struct {
-	wimodMessageImpl
+	wimodMessageStatusImpl
 	Address uint32
 }
 
@@ -308,7 +311,8 @@ func (p *ReactivateDeviceResp) String() string {
 }
 
 func (p *ReactivateDeviceResp) Decode(payload []byte) error {
-	err := devMgmtStatusCheck(payload[0])
+	p.status = payload[0]
+	err := lorawanStatusCheck(p.status)
 	if err != nil {
 		return err
 	}
@@ -339,7 +343,7 @@ func (p *DeactivateDeviceReq) Encode() ([]byte, error) {
 // LORAWAN_MSG_DEACTIVATE_DEVICE_RSP
 
 type DeactivateDeviceResp struct {
-	wimodMessageImpl
+	wimodMessageStatusImpl
 }
 
 func NewDeactivateDeviceResp() *DeactivateDeviceResp {
@@ -353,7 +357,8 @@ func (p *DeactivateDeviceResp) String() string {
 }
 
 func (p *DeactivateDeviceResp) Decode(payload []byte) error {
-	return devMgmtStatusCheck(payload[0])
+	p.status = payload[0]
+	return lorawanStatusCheck(p.status)
 }
 
 // LORAWAN_MSG_FACTORY_RESET_REQ
@@ -383,7 +388,7 @@ func (p *GetDeviceEUIReq) Encode() ([]byte, error) {
 // LORAWAN_MSG_GET_DEVICE_EUI_RSP
 
 type GetDeviceEUIResp struct {
-	wimodMessageImpl
+	wimodMessageStatusImpl
 	EUI EUI
 }
 
@@ -398,7 +403,8 @@ func (p *GetDeviceEUIResp) String() string {
 }
 
 func (p *GetDeviceEUIResp) Decode(payload []byte) error {
-	err := devMgmtStatusCheck(payload[0])
+	p.status = payload[0]
+	err := lorawanStatusCheck(payload[0])
 	if err != nil {
 		return err
 	}
@@ -429,7 +435,7 @@ func (p *GetNwkStatusReq) Encode() ([]byte, error) {
 // LORAWAN_MSG_GET_NWK_STATUS_RSP
 
 type GetNwkStatusResp struct {
-	wimodMessageImpl
+	wimodMessageStatusImpl
 	NetworkStatus  byte
 	Address        uint32
 	DataRateIdx    byte
@@ -448,16 +454,18 @@ func (p *GetNwkStatusResp) String() string {
 }
 
 func (p *GetNwkStatusResp) Decode(payload []byte) error {
-	err := devMgmtStatusCheck(payload[0])
+	p.status = payload[0]
+	err := lorawanStatusCheck(p.status)
 	if err != nil {
 		return err
 	}
-	bytes := payload[1:]
-	p.NetworkStatus = bytes[0]
-	p.Address = binary.LittleEndian.Uint32(bytes[1:5])
-	p.DataRateIdx = bytes[5]
-	p.PowerLevel = bytes[6]
-	p.MaxPayloadSize = bytes[7]
+	p.NetworkStatus = payload[1]
+	if p.NetworkStatus == LORAWAN_NETWORK_STATUS_ACTIVE_ABP || p.NetworkStatus == LORAWAN_NETWORK_STATUS_ACTIVE_OTAA {
+		p.Address = binary.LittleEndian.Uint32(payload[2:6])
+		p.DataRateIdx = payload[6]
+		p.PowerLevel = payload[7]
+		p.MaxPayloadSize = payload[8]
+	}
 	return nil
 }
 

@@ -29,7 +29,7 @@ func (p *PingReq) Encode() ([]byte, error) {
 // DEVMGMT_MSG_PING_RSP
 
 type PingResp struct {
-	wimodMessageImpl
+	wimodMessageStatusImpl
 }
 
 func NewPingResp() *PingResp {
@@ -43,7 +43,8 @@ func (p *PingResp) String() string {
 }
 
 func (p *PingResp) Decode(payload []byte) error {
-	return devMgmtStatusCheck(payload[0])
+	p.status = payload[0]
+	return devMgmtStatusCheck(p.status)
 }
 
 // DEVMGMT_MSG_GET_DEVICE_INFO_REQ
@@ -69,7 +70,7 @@ func (p *GetDeviceInfoReq) Encode() ([]byte, error) {
 // DEVMGMT_MSG_GET_DEVICE_INFO_RSP
 
 type GetDeviceInfoResp struct {
-	wimodMessageImpl
+	wimodMessageStatusImpl
 	ModuleType    byte
 	DeviceAddress uint32
 	DeviceID      uint32
@@ -86,7 +87,8 @@ func (p *GetDeviceInfoResp) String() string {
 }
 
 func (p *GetDeviceInfoResp) Decode(payload []byte) error {
-	err := devMgmtStatusCheck(payload[0])
+	p.status = payload[0]
+	err := devMgmtStatusCheck(p.status)
 	if err != nil {
 		return err
 	}
@@ -120,7 +122,7 @@ func (p *GetFWInfoReq) Encode() ([]byte, error) {
 // DEVMGMT_MSG_GET_FW_INFO_RSP
 
 type GetFWInfoResp struct {
-	wimodMessageImpl
+	wimodMessageStatusImpl
 	MinorVersion  byte
 	MajorVersion  byte
 	Build         uint16
@@ -139,7 +141,8 @@ func (p *GetFWInfoResp) String() string {
 }
 
 func (p *GetFWInfoResp) Decode(payload []byte) error {
-	err := devMgmtStatusCheck(payload[0])
+	p.status = payload[0]
+	err := devMgmtStatusCheck(p.status)
 	if err != nil {
 		return err
 	}
@@ -175,7 +178,7 @@ func (p *ResetReq) Encode() ([]byte, error) {
 // DEVMGMT_MSG_RESET_RSP
 
 type ResetResp struct {
-	wimodMessageImpl
+	wimodMessageStatusImpl
 }
 
 func NewResetResp() *ResetResp {
@@ -189,7 +192,8 @@ func (p *ResetResp) String() string {
 }
 
 func (p *ResetResp) Decode(payload []byte) error {
-	return devMgmtStatusCheck(payload[0])
+	p.status = payload[0]
+	return devMgmtStatusCheck(p.status)
 }
 
 // DEVMGMT_MSG_SET_OPMODE_REQ
@@ -217,7 +221,7 @@ func (p *SetOPModeReq) Encode() ([]byte, error) {
 // DEVMGMT_MSG_SET_OPMODE_RSP
 
 type SetOPModeResp struct {
-	wimodMessageImpl
+	wimodMessageStatusImpl
 }
 
 func NewSetOPModeResp() *SetOPModeResp {
@@ -231,7 +235,8 @@ func (p *SetOPModeResp) String() string {
 }
 
 func (p *SetOPModeResp) Decode(payload []byte) error {
-	return devMgmtStatusCheck(payload[0])
+	p.status = payload[0]
+	return devMgmtStatusCheck(p.status)
 }
 
 // DEVMGMT_MSG_GET_OPMODE_REQ
@@ -257,7 +262,7 @@ func (p *GetOPModeReq) Encode() ([]byte, error) {
 // DEVMGMT_MSG_GET_OPMODE_RSP
 
 type GetOPModeResp struct {
-	wimodMessageImpl
+	wimodMessageStatusImpl
 	Mode byte
 }
 
@@ -272,7 +277,8 @@ func (p *GetOPModeResp) String() string {
 }
 
 func (p *GetOPModeResp) Decode(payload []byte) error {
-	err := devMgmtStatusCheck(payload[0])
+	p.status = payload[0]
+	err := devMgmtStatusCheck(p.status)
 	if err != nil {
 		return err
 	}
@@ -307,7 +313,7 @@ func (p *SetRTCReq) Encode() ([]byte, error) {
 // DEVMGMT_MSG_SET_RTC_RSP
 
 type SetRTCResp struct {
-	wimodMessageImpl
+	wimodMessageStatusImpl
 }
 
 func NewSetRTCResp() *SetRTCResp {
@@ -321,7 +327,8 @@ func (p *SetRTCResp) String() string {
 }
 
 func (p *SetRTCResp) Decode(payload []byte) error {
-	return devMgmtStatusCheck(payload[0])
+	p.status = payload[0]
+	return devMgmtStatusCheck(p.status)
 }
 
 // DEVMGMT_MSG_GET_RTC_REQ
@@ -347,7 +354,7 @@ func (p *GetRTCReq) Encode() ([]byte, error) {
 // DEVMGMT_MSG_GET_RTC_RSP
 
 type GetRTCResp struct {
-	wimodMessageImpl
+	wimodMessageStatusImpl
 	Time time.Time
 }
 
@@ -362,7 +369,8 @@ func (p *GetRTCResp) String() string {
 }
 
 func (p *GetRTCResp) Decode(payload []byte) error {
-	err := devMgmtStatusCheck(payload[0])
+	p.status = payload[0]
+	err := devMgmtStatusCheck(p.status)
 	if err != nil {
 		return err
 	}
@@ -393,7 +401,7 @@ func (p *GetDeviceStatusReq) Encode() ([]byte, error) {
 // DEVMGMT_MSG_GET_DEVICE_STATUS_RSP
 
 type GetDeviceStatusResp struct {
-	wimodMessageImpl
+	wimodMessageStatusImpl
 	SystemTickResolution byte
 	SystemTicks          uint32
 	TargetTime           time.Time
@@ -424,7 +432,8 @@ func (p *GetDeviceStatusResp) String() string {
 }
 
 func (p *GetDeviceStatusResp) Decode(payload []byte) error {
-	err := devMgmtStatusCheck(payload[0])
+	p.status = payload[0]
+	err := devMgmtStatusCheck(p.status)
 	if err != nil {
 		return err
 	}
@@ -490,7 +499,7 @@ func (p *SetRTCAlarmReq) Encode() ([]byte, error) {
 // DEVMGMT_MSG_SET_RTC_ALARM_RSP
 
 type SetRTCAlarmResp struct {
-	wimodMessageImpl
+	wimodMessageStatusImpl
 }
 
 func NewSetRTCAlarmResp() *SetRTCAlarmResp {
@@ -504,7 +513,8 @@ func (p *SetRTCAlarmResp) String() string {
 }
 
 func (p *SetRTCAlarmResp) Decode(payload []byte) error {
-	return devMgmtStatusCheck(payload[0])
+	p.status = payload[0]
+	return devMgmtStatusCheck(p.status)
 }
 
 // DEVMGMT_MSG_CLEAR_RTC_ALARM_REQ
@@ -530,7 +540,7 @@ func (p *ClearRTCAlarmReq) Encode() ([]byte, error) {
 // DEVMGMT_MSG_CLEAR_RTC_ALARM_RSP
 
 type ClearRTCAlarmResp struct {
-	wimodMessageImpl
+	wimodMessageStatusImpl
 }
 
 func NewClearRTCAlarmResp() *ClearRTCAlarmResp {
@@ -544,7 +554,8 @@ func (p *ClearRTCAlarmResp) String() string {
 }
 
 func (p *ClearRTCAlarmResp) Decode(payload []byte) error {
-	return devMgmtStatusCheck(payload[0])
+	p.status = payload[0]
+	return devMgmtStatusCheck(p.status)
 }
 
 // DEVMGMT_MSG_GET_RTC_ALARM_REQ
@@ -570,7 +581,7 @@ func (p *GetRTCAlarmReq) Encode() ([]byte, error) {
 // DEVMGMT_MSG_GET_RTC_ALARM_RSP
 
 type GetRTCAlarmResp struct {
-	wimodMessageImpl
+	wimodMessageStatusImpl
 	AlarmStatus byte
 	AlarmType   byte
 	Hour        byte
@@ -589,7 +600,8 @@ func (p *GetRTCAlarmResp) String() string {
 }
 
 func (p *GetRTCAlarmResp) Decode(payload []byte) error {
-	err := devMgmtStatusCheck(payload[0])
+	p.status = payload[0]
+	err := devMgmtStatusCheck(p.status)
 	if err != nil {
 		return err
 	}
@@ -605,7 +617,7 @@ func (p *GetRTCAlarmResp) Decode(payload []byte) error {
 // DEVMGMT_MSG_RTC_ALARM_IND
 
 type RTCAlarmInd struct {
-	wimodMessageIndImpl
+	wimodMessageStatusImpl
 }
 
 func NewRTCAlarmInd() *RTCAlarmInd {
@@ -620,5 +632,5 @@ func (p *RTCAlarmInd) String() string {
 
 func (p *RTCAlarmInd) Decode(payload []byte) error {
 	p.status = payload[0]
-	return nil
+	return devMgmtStatusCheck(p.status)
 }

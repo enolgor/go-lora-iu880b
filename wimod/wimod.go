@@ -28,6 +28,15 @@ func (w *wimodMessageImpl) Code() uint16 {
 	return w.code
 }
 
+type wimodMessageStatusImpl struct {
+	wimodMessageImpl
+	status byte
+}
+
+func (w *wimodMessageStatusImpl) Status() byte {
+	return w.status
+}
+
 type WiModMessageReq interface {
 	WiModMessage
 	Encode() ([]byte, error)
@@ -36,15 +45,7 @@ type WiModMessageReq interface {
 type WiModMessageResp interface {
 	WiModMessage
 	Decode(bytes []byte) error
-}
-
-type wimodMessageIndImpl struct {
-	wimodMessageImpl
-	status byte
-}
-
-func (w *wimodMessageIndImpl) Status() byte {
-	return w.status
+	Status() byte
 }
 
 type WiModMessageInd interface {
