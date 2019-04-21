@@ -48,7 +48,7 @@ func DecodeEUI(bytes []byte) EUI {
 }
 
 func (e EUI) String() string {
-	return fmt.Sprintf("0x%016X", uint64(e))
+	return fmt.Sprintf("%016X", uint64(e))
 }
 
 type Key [2]uint64
@@ -70,5 +70,5 @@ func DecodeKey(bytes []byte) Key {
 }
 
 func (k Key) String() string {
-	return fmt.Sprintf("0x%016X%016X", k[0], k[1])
+	return fmt.Sprintf("%016X%016X", k[0], k[1])
 }

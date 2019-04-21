@@ -272,7 +272,72 @@ func (p *SendUDataTxInd) Decode(bytes []byte) error {
 // LORAWAN_MSG_SET_RSTACK_CONFIG_REQ
 // LORAWAN_MSG_SET_RSTACK_CONFIG_RSP
 // LORAWAN_MSG_GET_RSTACK_CONFIG_REQ
+
+type GetRStackConfigReq struct {
+	wimodMessageImpl
+}
+
+func NewGetRStackConfigReq() *GetRStackConfigReq {
+	req := &GetRStackConfigReq{}
+	req.code = LORAWAN_MSG_GET_RSTACK_CONFIG_REQ
+	return req
+}
+
+func (p *GetRStackConfigReq) String() string {
+	return fmt.Sprintf("GetRStackConfigReq[]")
+}
+
+func (p *GetRStackConfigReq) Encode() ([]byte, error) {
+	return []byte{}, nil
+}
+
 // LORAWAN_MSG_GET_RSTACK_CONFIG_RSP
+
+type GetRStackConfigResp struct {
+	wimodMessageStatusImpl
+	DefaultDataRateIdx   byte
+	TXPowerLevel         byte
+	AdaptativeDataRate   bool
+	DutyCycleControl     bool
+	ClassC               bool
+	MACEvents            bool
+	ExtendedHCI          bool
+	AutomaticPowerSaving bool
+	MaxRetransmissions   byte
+	BandIdx              byte
+	HeaderMACCmdCapacity byte
+}
+
+func NewGetRStackConfigResp() *GetRStackConfigResp {
+	resp := &GetRStackConfigResp{}
+	resp.code = LORAWAN_MSG_GET_RSTACK_CONFIG_RSP
+	return resp
+}
+
+func (p *GetRStackConfigResp) String() string {
+	return fmt.Sprintf("GetRStackConfigResp[DefaultDataRateIdx: %d, TXPowerLevel: %d, AdaptativeDataRate: %t, DutyCycleControl: %t, ClassC: %t, MACEvents: %t, ExtendedHCI: %t, AutomaticPowerSaving: %t, MaxRetransmissions: %d, BandIdx: %d, HeaderMACCmdCapacity: %d]", p.DefaultDataRateIdx, p.TXPowerLevel, p.AdaptativeDataRate, p.DutyCycleControl, p.ClassC, p.MACEvents, p.ExtendedHCI, p.AutomaticPowerSaving, p.MaxRetransmissions, p.BandIdx, p.HeaderMACCmdCapacity)
+}
+
+func (p *GetRStackConfigResp) Decode(payload []byte) error {
+	p.status = payload[0]
+	err := lorawanStatusCheck(p.status)
+	if err != nil {
+		return err
+	}
+	p.DefaultDataRateIdx = payload[1]
+	p.TXPowerLevel = payload[2]
+	p.AdaptativeDataRate = payload[3]&0x01 == 1
+	p.DutyCycleControl = (payload[3]>>1)&0x01 == 1
+	p.ClassC = (payload[3]>>2)&0x01 == 1
+	p.MACEvents = (payload[3]>>6)&0x01 == 1
+	p.ExtendedHCI = (payload[3]>>7)&0x01 == 1
+	p.AutomaticPowerSaving = payload[4]&0x01 == 1
+	p.MaxRetransmissions = payload[5]
+	p.BandIdx = payload[6]
+	p.HeaderMACCmdCapacity = payload[7]
+	return nil
+}
+
 // LORAWAN_MSG_REACTIVATE_DEVICE_REQ
 
 type ReactivateDeviceReq struct {
