@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"text/tabwriter"
+	"time"
 
 	"github.com/enolgor/wimod-lorawan-endnode-controller/controller"
 	"github.com/enolgor/wimod-lorawan-endnode-controller/wimod"
@@ -35,8 +36,9 @@ var deactivateCommand = flag.NewFlagSet("deactivate", flag.ExitOnError)
 var serialPort string
 
 const (
-	serialPortFlag  = "port"
-	serialPortUsage = "Set serial port of LoRa EndNode device"
+	serialPortFlag        = "port"
+	defaultSerialPortFlag = ""
+	serialPortUsage       = "Set serial port of LoRa EndNode device"
 )
 
 var infoNetwork bool
@@ -79,15 +81,55 @@ const (
 	infoRadioUsage       = "Display radio information"
 )
 
+var joinType string
+
+const (
+	joinTypeFlag        = "type"
+	defaultJoinTypeFlag = ""
+	joinTypeUsage       = "Specify join type (abp|otaa)"
+)
+
+var appKey string
+
+const (
+	appKeyFlag        = "appkey"
+	defaultAppKeyFlag = ""
+	appKeyUsage       = "Specify APP Key (required for otaa)"
+)
+
+var appSessKey string
+
+const (
+	appSessKeyFlag        = "appsesskey"
+	defaultAppSessKeyFlag = ""
+	appSessKeyUsage       = "Specify APP Session Key (required for abp)"
+)
+
+var nwkSessKey string
+
+const (
+	nwkSessKeyFlag        = "nwksesskey"
+	defaultNwkSessKeyFlag = ""
+	nwkSessKeyUsage       = "Specify Network Session Key (required for abp)"
+)
+
 func init() {
-	infoCommand.StringVar(&serialPort, serialPortFlag, "", serialPortUsage)
+	infoCommand.StringVar(&serialPort, serialPortFlag, defaultSerialPortFlag, serialPortUsage)
 	infoCommand.BoolVar(&infoNetwork, infoNetworkFlag, defaultInfoNetworkFlag, infoNetworkUsage)
 	infoCommand.BoolVar(&infoFirmware, infoFirmwareFlag, defaultInfoFirmwareFlag, infoFirmwareUsage)
 	infoCommand.BoolVar(&infoDevice, infoDeviceFlag, defaultInfoDeviceFlag, infoDeviceUsage)
 	infoCommand.BoolVar(&infoStatus, infoStatusFlag, defaultInfoStatusFlag, infoStatusUsage)
 	infoCommand.BoolVar(&infoRadio, infoRadioFlag, defaultInfoRadioFlag, infoRadioUsage)
 
-	deactivateCommand.StringVar(&serialPort, serialPortFlag, "", serialPortUsage)
+	joinCommand.StringVar(&serialPort, serialPortFlag, defaultSerialPortFlag, serialPortUsage)
+	joinCommand.StringVar(&joinType, joinTypeFlag, defaultJoinTypeFlag, joinTypeUsage)
+	joinCommand.StringVar(&appKey, appKeyFlag, defaultAppKeyFlag, appKeyUsage)
+	joinCommand.StringVar(&appSessKey, appSessKeyFlag, defaultAppSessKeyFlag, appSessKeyUsage)
+	joinCommand.StringVar(&nwkSessKey, nwkSessKeyFlag, defaultNwkSessKeyFlag, nwkSessKeyUsage)
+
+	deactivateCommand.StringVar(&serialPort, serialPortFlag, defaultSerialPortFlag, serialPortUsage)
+	synctimeCommand.StringVar(&serialPort, serialPortFlag, defaultSerialPortFlag, serialPortUsage)
+
 }
 
 func main() {
@@ -100,8 +142,14 @@ func main() {
 		infoCommand.Parse(os.Args[2:])
 		runInfoCommand()
 	case "join":
+		joinCommand.Parse(os.Args[2:])
+		runJoinCommand()
 	case "send":
+		sendCommand.Parse(os.Args[2:])
+		runSendCommand()
 	case "synctime":
+		synctimeCommand.Parse(os.Args[2:])
+		runSynctimeCommand()
 	case "deactivate":
 		deactivateCommand.Parse(os.Args[2:])
 		runDeactivateCommand()
@@ -338,8 +386,89 @@ func runInfoCommand() {
 }
 
 func runDeactivateCommand() {
-	checkSerialPort(infoCommand)
-	// controller := getController()
+	checkSerialPort(deactivateCommand)
+	controller := getController()
+	deactivateReq := wimod.NewDeactivateDeviceReq()
+	deactivateResp := wimod.NewDeactivateDeviceResp()
+	err := controller.Request(deactivateReq, deactivateResp)
+	if err != nil {
+		printErrorAndExit(err)
+	}
 	w := getTabWriter()
+	fmt.Fprintf(w, "Successfully deactivated\n")
 	w.Flush()
+}
+
+func runSynctimeCommand() {
+	checkSerialPort(synctimeCommand)
+	controller := getController()
+	reqSet := wimod.NewSetRTCReq(time.Now().UTC())
+	respSet := wimod.NewSetRTCResp()
+	err := controller.Request(reqSet, respSet)
+	if err != nil {
+		printErrorAndExit(err)
+	}
+	reqGet := wimod.NewGetRTCReq()
+	respGet := wimod.NewGetRTCResp()
+	err = controller.Request(reqGet, respGet)
+	if err != nil {
+		printErrorAndExit(err)
+	}
+	w := getTabWriter()
+	fmt.Fprintf(w, "Time synced:\t%s\n", respGet.Time)
+	w.Flush()
+}
+
+func runJoinCommand() {
+	checkSerialPort(joinCommand)
+	switch joinType {
+	case "abp":
+		if appSessKey == "" || nwkSessKey == "" {
+			fmt.Fprintln(os.Stderr, "For ABP join type, appsesskey and nwksesskey must be specified")
+			printDefaults(joinCommand)
+			os.Exit(1)
+		}
+		err := abpJoin()
+		if err != nil {
+			printErrorAndExit(err)
+		}
+	case "otaa":
+		if appKey == "" {
+			fmt.Fprintln(os.Stderr, "For OTAA join type, appkey must be specified")
+			printDefaults(joinCommand)
+			os.Exit(1)
+		}
+		err := otaaJoin()
+		if err != nil {
+			printErrorAndExit(err)
+		}
+	default:
+		fmt.Fprintln(os.Stderr, "Join type must be abp or otaa")
+		printDefaults(joinCommand)
+		os.Exit(1)
+	}
+}
+
+func otaaJoin() error {
+	controller := getController()
+	joinParamReq := wimod.NewSetJoinParamReq(EUI, Key)
+	joinParamResp := wimod.NewSetJoinParamResp()
+	err := controller.Request(reqSet, respSet)
+	if err != nil {
+		return err
+	}
+	joinReq := wimod.NewJoinNetworkReq()
+	joinResp := wimod.NewJoinNetworkResp()
+	err = controller.Request(joinReq, joinResp)
+	if err != nil {
+		return err
+	}
+}
+
+func abpJoin() error {
+
+}
+
+func runSendCommand() {
+
 }

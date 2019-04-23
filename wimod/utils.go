@@ -3,6 +3,7 @@ package wimod
 import (
 	"encoding/binary"
 	"fmt"
+	"strconv"
 	"time"
 )
 
@@ -49,6 +50,11 @@ func DecodeEUI(bytes []byte) EUI {
 
 func (e EUI) String() string {
 	return fmt.Sprintf("%016X", uint64(e))
+}
+
+func ParseEUI(str string) (EUI, error) {
+	v := strconv.ParseUint(str, 16, 64)
+	return EUI(v)
 }
 
 type Key [2]uint64
