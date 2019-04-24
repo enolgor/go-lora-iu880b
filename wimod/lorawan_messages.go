@@ -6,7 +6,56 @@ import (
 )
 
 // LORAWAN_MSG_ACTIVATE_DEVICE_REQ
+
+type ActivateDeviceReq struct {
+	wimodMessageImpl
+	Address    uint32
+	AppSessKey Key
+	NwkSessKey Key
+}
+
+func NewActivateDeviceReq(address uint32, appSessKey Key, nwkSessKey Key) *ActivateDeviceReq {
+	req := &ActivateDeviceReq{}
+	req.code = LORAWAN_MSG_ACTIVATE_DEVICE_REQ
+	req.Address = address
+	req.AppSessKey = appSessKey
+	req.NwkSessKey = nwkSessKey
+	return req
+}
+
+func (p *ActivateDeviceReq) String() string {
+	return fmt.Sprintf("ActivateDeviceReq[Address: %08X, AppSessKey: %v, NwkSessKey: %v]", p.Address, p.AppSessKey, p.NwkSessKey)
+}
+
+func (p *ActivateDeviceReq) Encode() ([]byte, error) {
+	buff := make([]byte, 4)
+	binary.LittleEndian.PutUint32(buff, p.Address)
+	buff = append(buff, EncodeKey(&p.NwkSessKey)...)
+	buff = append(buff, EncodeKey(&p.AppSessKey)...)
+	return buff, nil
+}
+
 // LORAWAN_MSG_ACTIVATE_DEVICE_RSP
+
+type ActivateDeviceResp struct {
+	wimodMessageStatusImpl
+}
+
+func NewActivateDeviceResp() *ActivateDeviceResp {
+	resp := &ActivateDeviceResp{}
+	resp.code = LORAWAN_MSG_ACTIVATE_DEVICE_RSP
+	return resp
+}
+
+func (p *ActivateDeviceResp) String() string {
+	return fmt.Sprintf("ActivateDeviceResp[]")
+}
+
+func (p *ActivateDeviceResp) Decode(payload []byte) error {
+	p.status = payload[0]
+	return lorawanStatusCheck(p.status)
+}
+
 // LORAWAN_MSG_SET_JOIN_PARAM_REQ
 
 type SetJoinParamReq struct {

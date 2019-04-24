@@ -1,9 +1,12 @@
 package main
 
 import (
+	"encoding/base64"
+	"encoding/hex"
 	"flag"
 	"fmt"
 	"os"
+	"strconv"
 	"text/tabwriter"
 	"time"
 
@@ -13,8 +16,8 @@ import (
 )
 
 // controller info -network -firmware -device -radio
-// controller join -type otaa|abp -appkey asdf -nwkskey asdf -appskey asdf
-// controller send -enc ascii|hex|b64 -type u|c asdfasdf
+// controller join -type otaa|abp -appkey asdf -nwkskey asdf -appskey asdf -eui asdf
+// controller send -enc ascii|hex|b64 -type u|c asdfasdf -port 1
 // controller synctime
 // controller deactivate
 
@@ -22,9 +25,11 @@ const usageMessage = `
 Usage: loractl <command> [<args>]
 
 Available commands:
-  info  Display information about the network/device
-  join  Join a LoRa network
-  send  Send a packet to the network
+  info        Display information about the network/device
+  join        Join a LoRa network
+  send        Send a packet to the network
+  synctime    Synchronize time with the host machine
+  deactivate  Deactivate device
 `
 
 var infoCommand = flag.NewFlagSet("info", flag.ExitOnError)
@@ -36,7 +41,7 @@ var deactivateCommand = flag.NewFlagSet("deactivate", flag.ExitOnError)
 var serialPort string
 
 const (
-	serialPortFlag        = "port"
+	serialPortFlag        = "serialport"
 	defaultSerialPortFlag = ""
 	serialPortUsage       = "Set serial port of LoRa EndNode device"
 )
@@ -86,7 +91,7 @@ var joinType string
 const (
 	joinTypeFlag        = "type"
 	defaultJoinTypeFlag = ""
-	joinTypeUsage       = "Specify join type (abp|otaa)"
+	joinTypeUsage       = "Specify join type: abp|otaa"
 )
 
 var appKey string
@@ -95,6 +100,22 @@ const (
 	appKeyFlag        = "appkey"
 	defaultAppKeyFlag = ""
 	appKeyUsage       = "Specify APP Key (required for otaa)"
+)
+
+var appEUI string
+
+const (
+	appEUIFlag        = "appeui"
+	defaultAppEUIFlag = ""
+	appEUIUsage       = "Specify APP EUI (required for otaa)"
+)
+
+var address string
+
+const (
+	addressFlag        = "address"
+	defaultAddressFlag = ""
+	addressFlagUsage   = "Specify address of device (required for abp)"
 )
 
 var appSessKey string
@@ -113,6 +134,38 @@ const (
 	nwkSessKeyUsage       = "Specify Network Session Key (required for abp)"
 )
 
+var sendEnc string
+
+const (
+	sendEncFlag        = "enc"
+	defaultSendEncFlag = ""
+	sendEncUsage       = "Specify encoding of payload: ascii|hex|b64"
+)
+
+var sendType string
+
+const (
+	sendTypeFlag        = "type"
+	defaultSendTypeFlag = ""
+	sendTypeUsage       = "Specify type of packet sent: c|u"
+)
+
+var sendPayload string
+
+const (
+	sendPayloadFlag        = "payload"
+	defaultSendPayloadFlag = ""
+	sendPayloadUsage       = "Payload to send"
+)
+
+var sendPort uint
+
+const (
+	sendPortFlag        = "loraport"
+	defaultSendPortFlag = 0
+	sendPortUsage       = "Specify port: 0-255"
+)
+
 func init() {
 	infoCommand.StringVar(&serialPort, serialPortFlag, defaultSerialPortFlag, serialPortUsage)
 	infoCommand.BoolVar(&infoNetwork, infoNetworkFlag, defaultInfoNetworkFlag, infoNetworkUsage)
@@ -124,10 +177,19 @@ func init() {
 	joinCommand.StringVar(&serialPort, serialPortFlag, defaultSerialPortFlag, serialPortUsage)
 	joinCommand.StringVar(&joinType, joinTypeFlag, defaultJoinTypeFlag, joinTypeUsage)
 	joinCommand.StringVar(&appKey, appKeyFlag, defaultAppKeyFlag, appKeyUsage)
+	joinCommand.StringVar(&appEUI, appEUIFlag, defaultAppEUIFlag, appEUIUsage)
+	joinCommand.StringVar(&address, addressFlag, defaultAddressFlag, addressFlagUsage)
 	joinCommand.StringVar(&appSessKey, appSessKeyFlag, defaultAppSessKeyFlag, appSessKeyUsage)
 	joinCommand.StringVar(&nwkSessKey, nwkSessKeyFlag, defaultNwkSessKeyFlag, nwkSessKeyUsage)
 
+	sendCommand.StringVar(&serialPort, serialPortFlag, defaultSerialPortFlag, serialPortUsage)
+	sendCommand.StringVar(&sendEnc, sendEncFlag, defaultSendEncFlag, sendEncUsage)
+	sendCommand.StringVar(&sendType, sendTypeFlag, defaultSendTypeFlag, sendTypeUsage)
+	sendCommand.StringVar(&sendPayload, sendPayloadFlag, defaultSendPayloadFlag, sendPayloadUsage)
+	sendCommand.UintVar(&sendPort, sendPortFlag, defaultSendPortFlag, sendPortUsage)
+
 	deactivateCommand.StringVar(&serialPort, serialPortFlag, defaultSerialPortFlag, serialPortUsage)
+
 	synctimeCommand.StringVar(&serialPort, serialPortFlag, defaultSerialPortFlag, serialPortUsage)
 
 }
@@ -423,8 +485,8 @@ func runJoinCommand() {
 	checkSerialPort(joinCommand)
 	switch joinType {
 	case "abp":
-		if appSessKey == "" || nwkSessKey == "" {
-			fmt.Fprintln(os.Stderr, "For ABP join type, appsesskey and nwksesskey must be specified")
+		if appSessKey == "" || nwkSessKey == "" || address == "" {
+			fmt.Fprintln(os.Stderr, "For ABP join type, appsesskey, nwksesskey and address must be specified")
 			printDefaults(joinCommand)
 			os.Exit(1)
 		}
@@ -433,8 +495,8 @@ func runJoinCommand() {
 			printErrorAndExit(err)
 		}
 	case "otaa":
-		if appKey == "" {
-			fmt.Fprintln(os.Stderr, "For OTAA join type, appkey must be specified")
+		if appKey == "" || appEUI == "" {
+			fmt.Fprintln(os.Stderr, "For OTAA join type, appkey and appeui must be specified")
 			printDefaults(joinCommand)
 			os.Exit(1)
 		}
@@ -451,9 +513,26 @@ func runJoinCommand() {
 
 func otaaJoin() error {
 	controller := getController()
-	joinParamReq := wimod.NewSetJoinParamReq(EUI, Key)
+	eui, err := wimod.ParseEUI(appEUI)
+	if err != nil {
+		return err
+	}
+	key, err := wimod.ParseKey(appKey)
+	if err != nil {
+		return err
+	}
+	nwkStatusReq := wimod.NewGetNwkStatusReq()
+	nwkStatusResp := wimod.NewGetNwkStatusResp()
+	err = controller.Request(nwkStatusReq, nwkStatusResp)
+	if err != nil {
+		return err
+	}
+	if nwkStatusResp.NetworkStatus != wimod.LORAWAN_NETWORK_STATUS_INACTIVE {
+		printErrorAndExit(fmt.Errorf("device is already joined or joining, deactivate first"))
+	}
+	joinParamReq := wimod.NewSetJoinParamReq(eui, key)
 	joinParamResp := wimod.NewSetJoinParamResp()
-	err := controller.Request(reqSet, respSet)
+	err = controller.Request(joinParamReq, joinParamResp)
 	if err != nil {
 		return err
 	}
@@ -463,12 +542,123 @@ func otaaJoin() error {
 	if err != nil {
 		return err
 	}
+	joinTxEvent := wimod.NewJoinNetworkTxInd()
+	joinedEvent := wimod.NewJoinNetworkInd()
+	err = controller.ReadSpecificInd(joinTxEvent)
+	if err != nil {
+		return err
+	}
+	w := getTabWriter()
+	fmt.Fprintf(w, "Join packet successfully sent\n")
+	err = controller.ReadSpecificInd(joinedEvent)
+	if err != nil {
+		return err
+	}
+	fmt.Fprintf(w, "Device successfully joined\n")
+	fmt.Fprintf(w, "Address:\t%08X\n", joinedEvent.Address)
+	w.Flush()
+	return nil
 }
 
 func abpJoin() error {
-
+	controller := getController()
+	keyApp, err := wimod.ParseKey(appSessKey)
+	if err != nil {
+		return err
+	}
+	keyNwk, err := wimod.ParseKey(nwkSessKey)
+	if err != nil {
+		return err
+	}
+	addr, err := strconv.ParseUint(address, 16, 32)
+	if err != nil {
+		return err
+	}
+	nwkStatusReq := wimod.NewGetNwkStatusReq()
+	nwkStatusResp := wimod.NewGetNwkStatusResp()
+	err = controller.Request(nwkStatusReq, nwkStatusResp)
+	if err != nil {
+		return err
+	}
+	if nwkStatusResp.NetworkStatus != wimod.LORAWAN_NETWORK_STATUS_INACTIVE {
+		printErrorAndExit(fmt.Errorf("device is already joined or joining, deactivate first"))
+	}
+	activateReq := wimod.NewActivateDeviceReq(uint32(addr), keyApp, keyNwk)
+	activateResp := wimod.NewActivateDeviceResp()
+	err = controller.Request(activateReq, activateResp)
+	if err != nil {
+		return err
+	}
+	w := getTabWriter()
+	fmt.Fprintf(w, "Device successfully activated\n")
+	w.Flush()
+	return nil
 }
 
 func runSendCommand() {
+	checkSerialPort(sendCommand)
+	if sendType != "c" && sendType != "u" {
+		printErrorAndExit(fmt.Errorf("send type should be (c)onfirmed or (u)nconfirmed"))
+	}
+	if sendEnc != "ascii" && sendEnc != "hex" && sendEnc != "b64" {
+		printErrorAndExit(fmt.Errorf("encoding should be ascii, hex or b64"))
+	}
+	if sendPayload == "" {
+		printErrorAndExit(fmt.Errorf("payload is empty"))
+	}
+	if sendPort > 255 {
+		printErrorAndExit(fmt.Errorf("port should be from 0 to 255"))
+	}
+	port := byte(sendPort)
+	var payload []byte
+	var err error
+	switch sendEnc {
+	case "ascii":
+		payload = []byte(sendPayload)
+	case "hex":
+		payload, err = hex.DecodeString(sendPayload)
+		if err != nil {
+			printErrorAndExit(err)
+		}
+	case "b64":
+		payload, err = base64.StdEncoding.DecodeString(sendPayload)
+		if err != nil {
+			printErrorAndExit(err)
+		}
+	}
+	switch sendType {
+	case "c":
+		err = sendConfirmed(port, payload)
+		if err != nil {
+			printErrorAndExit(err)
+		}
+	case "u":
+		err = sendUnconfirmed(port, payload)
+		if err != nil {
+			printErrorAndExit(err)
+		}
+	}
+}
 
+func sendUnconfirmed(port byte, payload []byte) error {
+	controller := getController()
+	udataReq := wimod.NewSendUDataReq(port, payload)
+	udataResp := wimod.NewSendUDataResp()
+	err := controller.Request(udataReq, udataResp)
+	if err != nil {
+		return err
+	}
+	udataTxInd := wimod.NewSendUDataTxInd()
+	err = controller.ReadSpecificInd(udataTxInd)
+	if err != nil {
+		return err
+	}
+	w := getTabWriter()
+	fmt.Fprintf(w, "Unconfirmed data successfully sent\n")
+	w.Flush()
+	return nil
+}
+
+func sendConfirmed(port byte, payload []byte) error {
+	return nil
 }

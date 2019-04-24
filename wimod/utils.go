@@ -53,8 +53,11 @@ func (e EUI) String() string {
 }
 
 func ParseEUI(str string) (EUI, error) {
-	v := strconv.ParseUint(str, 16, 64)
-	return EUI(v)
+	if len(str) != 16 {
+		return EUI(0), fmt.Errorf("EUI size must be 64 bit (16 hex chars)")
+	}
+	v, err := strconv.ParseUint(str, 16, 64)
+	return EUI(v), err
 }
 
 type Key [2]uint64
@@ -77,4 +80,22 @@ func DecodeKey(bytes []byte) Key {
 
 func (k Key) String() string {
 	return fmt.Sprintf("%016X%016X", k[0], k[1])
+}
+
+func ParseKey(str string) (Key, error) {
+	key := [2]uint64{}
+	if len(str) != 32 {
+		return Key(key), fmt.Errorf("EUI size must be 128 bit (32 hex chars)")
+	}
+	k1, err := strconv.ParseUint(str[:16], 16, 64)
+	if err != nil {
+		return Key(key), err
+	}
+	k2, err := strconv.ParseUint(str[16:], 16, 64)
+	if err != nil {
+		return Key(key), err
+	}
+	key[0] = k1
+	key[1] = k2
+	return Key(key), nil
 }
