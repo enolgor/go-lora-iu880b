@@ -78,6 +78,7 @@ func (c *WiModController) start() {
 			channels, ok := c.respChannels[code]
 			if !ok {
 				fmt.Printf("Discarded packet because no listener: %v\n", hciPacket)
+				c.mutex.Unlock()
 				continue
 			}
 			respChannel := channels[0]
@@ -117,6 +118,8 @@ func (c *WiModController) Close() {
 }
 
 func (c *WiModController) Request(req wimod.WiModMessageReq, resp wimod.WiModMessageResp) error {
+	req.Init()
+	resp.Init()
 	respChannel := make(chan hci.HCIPacket)
 	c.mutex.Lock()
 	channels, ok := c.respChannels[resp.Code()]
@@ -126,7 +129,6 @@ func (c *WiModController) Request(req wimod.WiModMessageReq, resp wimod.WiModMes
 	channels = append(channels, respChannel)
 	c.respChannels[resp.Code()] = channels
 	c.mutex.Unlock()
-
 	err := c.sendReq(req)
 	if err != nil {
 		return err
@@ -150,6 +152,7 @@ func (c *WiModController) ReadInd() (wimod.WiModMessageInd, error) {
 }
 
 func (c *WiModController) ReadSpecificInd(ind wimod.WiModMessageInd) error {
+	ind.Init()
 	eventChannel := make(chan hci.HCIPacket)
 	c.mutex.Lock()
 	channels, ok := c.eventChannels[ind.Code()]

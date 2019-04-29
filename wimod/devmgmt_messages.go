@@ -14,8 +14,12 @@ type PingReq struct {
 
 func NewPingReq() *PingReq {
 	req := &PingReq{}
-	req.code = DEVMGMT_MSG_PING_REQ
+	req.Init()
 	return req
+}
+
+func (p *PingReq) Init() {
+	p.code = DEVMGMT_MSG_PING_REQ
 }
 
 func (p *PingReq) String() string {
@@ -34,8 +38,12 @@ type PingResp struct {
 
 func NewPingResp() *PingResp {
 	resp := &PingResp{}
-	resp.code = DEVMGMT_MSG_PING_RSP
+	resp.Init()
 	return resp
+}
+
+func (p *PingResp) Init() {
+	p.code = DEVMGMT_MSG_PING_RSP
 }
 
 func (p *PingResp) String() string {
@@ -43,8 +51,8 @@ func (p *PingResp) String() string {
 }
 
 func (p *PingResp) Decode(payload []byte) error {
-	p.status = payload[0]
-	return devMgmtStatusCheck(p.status)
+	p.Status = payload[0]
+	return devMgmtStatusCheck(p.Status)
 }
 
 // DEVMGMT_MSG_GET_DEVICE_INFO_REQ
@@ -55,8 +63,12 @@ type GetDeviceInfoReq struct {
 
 func NewGetDeviceInfoReq() *GetDeviceInfoReq {
 	req := &GetDeviceInfoReq{}
-	req.code = DEVMGMT_MSG_GET_DEVICE_INFO_REQ
+	req.Init()
 	return req
+}
+
+func (p *GetDeviceInfoReq) Init() {
+	p.code = DEVMGMT_MSG_GET_DEVICE_INFO_REQ
 }
 
 func (p *GetDeviceInfoReq) String() string {
@@ -78,8 +90,12 @@ type GetDeviceInfoResp struct {
 
 func NewGetDeviceInfoResp() *GetDeviceInfoResp {
 	resp := &GetDeviceInfoResp{}
-	resp.code = DEVMGMT_MSG_GET_DEVICE_INFO_RSP
+	resp.Init()
 	return resp
+}
+
+func (p *GetDeviceInfoResp) Init() {
+	p.code = DEVMGMT_MSG_GET_DEVICE_INFO_RSP
 }
 
 func (p *GetDeviceInfoResp) String() string {
@@ -87,8 +103,8 @@ func (p *GetDeviceInfoResp) String() string {
 }
 
 func (p *GetDeviceInfoResp) Decode(payload []byte) error {
-	p.status = payload[0]
-	err := devMgmtStatusCheck(p.status)
+	p.Status = payload[0]
+	err := devMgmtStatusCheck(p.Status)
 	if err != nil {
 		return err
 	}
@@ -107,8 +123,12 @@ type GetFWInfoReq struct {
 
 func NewGetFWInfoReq() *GetFWInfoReq {
 	req := &GetFWInfoReq{}
-	req.code = DEVMGMT_MSG_GET_FW_INFO_REQ
+	req.Init()
 	return req
+}
+
+func (p *GetFWInfoReq) Init() {
+	p.code = DEVMGMT_MSG_GET_FW_INFO_REQ
 }
 
 func (p *GetFWInfoReq) String() string {
@@ -132,8 +152,12 @@ type GetFWInfoResp struct {
 
 func NewGetFWInfoResp() *GetFWInfoResp {
 	resp := &GetFWInfoResp{}
-	resp.code = DEVMGMT_MSG_GET_FW_INFO_RSP
+	resp.Init()
 	return resp
+}
+
+func (p *GetFWInfoResp) Init() {
+	p.code = DEVMGMT_MSG_GET_FW_INFO_RSP
 }
 
 func (p *GetFWInfoResp) String() string {
@@ -141,8 +165,8 @@ func (p *GetFWInfoResp) String() string {
 }
 
 func (p *GetFWInfoResp) Decode(payload []byte) error {
-	p.status = payload[0]
-	err := devMgmtStatusCheck(p.status)
+	p.Status = payload[0]
+	err := devMgmtStatusCheck(p.Status)
 	if err != nil {
 		return err
 	}
@@ -163,8 +187,12 @@ type ResetReq struct {
 
 func NewResetReq() *ResetReq {
 	req := &ResetReq{}
-	req.code = DEVMGMT_MSG_RESET_REQ
+	req.Init()
 	return req
+}
+
+func (p *ResetReq) Init() {
+	p.code = DEVMGMT_MSG_RESET_REQ
 }
 
 func (p *ResetReq) String() string {
@@ -183,8 +211,12 @@ type ResetResp struct {
 
 func NewResetResp() *ResetResp {
 	resp := &ResetResp{}
-	resp.code = DEVMGMT_MSG_RESET_RSP
+	resp.Init()
 	return resp
+}
+
+func (p *ResetResp) Init() {
+	p.code = DEVMGMT_MSG_RESET_RSP
 }
 
 func (p *ResetResp) String() string {
@@ -192,8 +224,8 @@ func (p *ResetResp) String() string {
 }
 
 func (p *ResetResp) Decode(payload []byte) error {
-	p.status = payload[0]
-	return devMgmtStatusCheck(p.status)
+	p.Status = payload[0]
+	return devMgmtStatusCheck(p.Status)
 }
 
 // DEVMGMT_MSG_SET_OPMODE_REQ
@@ -205,9 +237,13 @@ type SetOPModeReq struct {
 
 func NewSetOPModeReq(mode byte) *SetOPModeReq {
 	req := &SetOPModeReq{}
-	req.code = DEVMGMT_MSG_SET_OPMODE_REQ
+	req.Init()
 	req.Mode = mode
 	return req
+}
+
+func (p *SetOPModeReq) Init() {
+	p.code = DEVMGMT_MSG_SET_OPMODE_REQ
 }
 
 func (p *SetOPModeReq) String() string {
@@ -226,8 +262,12 @@ type SetOPModeResp struct {
 
 func NewSetOPModeResp() *SetOPModeResp {
 	resp := &SetOPModeResp{}
-	resp.code = DEVMGMT_MSG_SET_OPMODE_RSP
+	resp.Init()
 	return resp
+}
+
+func (p *SetOPModeResp) Init() {
+	p.code = DEVMGMT_MSG_SET_OPMODE_RSP
 }
 
 func (p *SetOPModeResp) String() string {
@@ -235,8 +275,8 @@ func (p *SetOPModeResp) String() string {
 }
 
 func (p *SetOPModeResp) Decode(payload []byte) error {
-	p.status = payload[0]
-	return devMgmtStatusCheck(p.status)
+	p.Status = payload[0]
+	return devMgmtStatusCheck(p.Status)
 }
 
 // DEVMGMT_MSG_GET_OPMODE_REQ
@@ -247,8 +287,12 @@ type GetOPModeReq struct {
 
 func NewGetOPModeReq() *GetOPModeReq {
 	req := &GetOPModeReq{}
-	req.code = DEVMGMT_MSG_GET_OPMODE_REQ
+	req.Init()
 	return req
+}
+
+func (p *GetOPModeReq) Init() {
+	p.code = DEVMGMT_MSG_GET_OPMODE_REQ
 }
 
 func (p *GetOPModeReq) String() string {
@@ -268,8 +312,12 @@ type GetOPModeResp struct {
 
 func NewGetOPModeResp() *GetOPModeResp {
 	resp := &GetOPModeResp{}
-	resp.code = DEVMGMT_MSG_GET_OPMODE_RSP
+	resp.Init()
 	return resp
+}
+
+func (p *GetOPModeResp) Init() {
+	p.code = DEVMGMT_MSG_GET_OPMODE_RSP
 }
 
 func (p *GetOPModeResp) String() string {
@@ -277,8 +325,8 @@ func (p *GetOPModeResp) String() string {
 }
 
 func (p *GetOPModeResp) Decode(payload []byte) error {
-	p.status = payload[0]
-	err := devMgmtStatusCheck(p.status)
+	p.Status = payload[0]
+	err := devMgmtStatusCheck(p.Status)
 	if err != nil {
 		return err
 	}
@@ -295,9 +343,13 @@ type SetRTCReq struct {
 
 func NewSetRTCReq(time time.Time) *SetRTCReq {
 	req := &SetRTCReq{}
-	req.code = DEVMGMT_MSG_SET_RTC_REQ
+	req.Init()
 	req.Time = time
 	return req
+}
+
+func (p *SetRTCReq) Init() {
+	p.code = DEVMGMT_MSG_SET_RTC_REQ
 }
 
 func (p *SetRTCReq) String() string {
@@ -318,8 +370,12 @@ type SetRTCResp struct {
 
 func NewSetRTCResp() *SetRTCResp {
 	resp := &SetRTCResp{}
-	resp.code = DEVMGMT_MSG_SET_RTC_RSP
+	resp.Init()
 	return resp
+}
+
+func (p *SetRTCResp) Init() {
+	p.code = DEVMGMT_MSG_SET_RTC_RSP
 }
 
 func (p *SetRTCResp) String() string {
@@ -327,8 +383,8 @@ func (p *SetRTCResp) String() string {
 }
 
 func (p *SetRTCResp) Decode(payload []byte) error {
-	p.status = payload[0]
-	return devMgmtStatusCheck(p.status)
+	p.Status = payload[0]
+	return devMgmtStatusCheck(p.Status)
 }
 
 // DEVMGMT_MSG_GET_RTC_REQ
@@ -339,8 +395,12 @@ type GetRTCReq struct {
 
 func NewGetRTCReq() *GetRTCReq {
 	req := &GetRTCReq{}
-	req.code = DEVMGMT_MSG_GET_RTC_REQ
+	req.Init()
 	return req
+}
+
+func (p *GetRTCReq) Init() {
+	p.code = DEVMGMT_MSG_GET_RTC_REQ
 }
 
 func (p *GetRTCReq) String() string {
@@ -360,8 +420,12 @@ type GetRTCResp struct {
 
 func NewGetRTCResp() *GetRTCResp {
 	resp := &GetRTCResp{}
-	resp.code = DEVMGMT_MSG_GET_RTC_RSP
+	resp.Init()
 	return resp
+}
+
+func (p *GetRTCResp) Init() {
+	p.code = DEVMGMT_MSG_GET_RTC_RSP
 }
 
 func (p *GetRTCResp) String() string {
@@ -369,8 +433,8 @@ func (p *GetRTCResp) String() string {
 }
 
 func (p *GetRTCResp) Decode(payload []byte) error {
-	p.status = payload[0]
-	err := devMgmtStatusCheck(p.status)
+	p.Status = payload[0]
+	err := devMgmtStatusCheck(p.Status)
 	if err != nil {
 		return err
 	}
@@ -386,8 +450,12 @@ type GetDeviceStatusReq struct {
 
 func NewGetDeviceStatusReq() *GetDeviceStatusReq {
 	req := &GetDeviceStatusReq{}
-	req.code = DEVMGMT_MSG_GET_DEVICE_STATUS_REQ
+	req.Init()
 	return req
+}
+
+func (p *GetDeviceStatusReq) Init() {
+	p.code = DEVMGMT_MSG_GET_DEVICE_STATUS_REQ
 }
 
 func (p *GetDeviceStatusReq) String() string {
@@ -423,8 +491,12 @@ type GetDeviceStatusResp struct {
 
 func NewGetDeviceStatusResp() *GetDeviceStatusResp {
 	resp := &GetDeviceStatusResp{}
-	resp.code = DEVMGMT_MSG_GET_DEVICE_STATUS_RSP
+	resp.Init()
 	return resp
+}
+
+func (p *GetDeviceStatusResp) Init() {
+	p.code = DEVMGMT_MSG_GET_DEVICE_STATUS_RSP
 }
 
 func (p *GetDeviceStatusResp) String() string {
@@ -432,8 +504,8 @@ func (p *GetDeviceStatusResp) String() string {
 }
 
 func (p *GetDeviceStatusResp) Decode(payload []byte) error {
-	p.status = payload[0]
-	err := devMgmtStatusCheck(p.status)
+	p.Status = payload[0]
+	err := devMgmtStatusCheck(p.Status)
 	if err != nil {
 		return err
 	}
@@ -475,12 +547,16 @@ const (
 
 func NewSetRTCAlarmReq(alarmType, hour, minutes, seconds byte) *SetRTCAlarmReq {
 	req := &SetRTCAlarmReq{}
-	req.code = DEVMGMT_MSG_SET_RTC_ALARM_REQ
+	req.Init()
 	req.AlarmType = alarmType
 	req.Hour = hour
 	req.Minutes = minutes
 	req.Seconds = seconds
 	return req
+}
+
+func (p *SetRTCAlarmReq) Init() {
+	p.code = DEVMGMT_MSG_SET_RTC_ALARM_REQ
 }
 
 func (p *SetRTCAlarmReq) String() string {
@@ -504,8 +580,12 @@ type SetRTCAlarmResp struct {
 
 func NewSetRTCAlarmResp() *SetRTCAlarmResp {
 	resp := &SetRTCAlarmResp{}
-	resp.code = DEVMGMT_MSG_SET_RTC_ALARM_RSP
+	resp.Init()
 	return resp
+}
+
+func (p *SetRTCAlarmResp) Init() {
+	p.code = DEVMGMT_MSG_SET_RTC_ALARM_RSP
 }
 
 func (p *SetRTCAlarmResp) String() string {
@@ -513,8 +593,8 @@ func (p *SetRTCAlarmResp) String() string {
 }
 
 func (p *SetRTCAlarmResp) Decode(payload []byte) error {
-	p.status = payload[0]
-	return devMgmtStatusCheck(p.status)
+	p.Status = payload[0]
+	return devMgmtStatusCheck(p.Status)
 }
 
 // DEVMGMT_MSG_CLEAR_RTC_ALARM_REQ
@@ -525,8 +605,12 @@ type ClearRTCAlarmReq struct {
 
 func NewClearRTCAlarmReq() *ClearRTCAlarmReq {
 	req := &ClearRTCAlarmReq{}
-	req.code = DEVMGMT_MSG_CLEAR_RTC_ALARM_REQ
+	req.Init()
 	return req
+}
+
+func (p *ClearRTCAlarmReq) Init() {
+	p.code = DEVMGMT_MSG_CLEAR_RTC_ALARM_REQ
 }
 
 func (p *ClearRTCAlarmReq) String() string {
@@ -545,8 +629,12 @@ type ClearRTCAlarmResp struct {
 
 func NewClearRTCAlarmResp() *ClearRTCAlarmResp {
 	resp := &ClearRTCAlarmResp{}
-	resp.code = DEVMGMT_MSG_CLEAR_RTC_ALARM_RSP
+	resp.Init()
 	return resp
+}
+
+func (p *ClearRTCAlarmResp) Init() {
+	p.code = DEVMGMT_MSG_CLEAR_RTC_ALARM_RSP
 }
 
 func (p *ClearRTCAlarmResp) String() string {
@@ -554,8 +642,8 @@ func (p *ClearRTCAlarmResp) String() string {
 }
 
 func (p *ClearRTCAlarmResp) Decode(payload []byte) error {
-	p.status = payload[0]
-	return devMgmtStatusCheck(p.status)
+	p.Status = payload[0]
+	return devMgmtStatusCheck(p.Status)
 }
 
 // DEVMGMT_MSG_GET_RTC_ALARM_REQ
@@ -566,8 +654,12 @@ type GetRTCAlarmReq struct {
 
 func NewGetRTCAlarmReq() *GetRTCAlarmReq {
 	req := &GetRTCAlarmReq{}
-	req.code = DEVMGMT_MSG_GET_RTC_ALARM_REQ
+	req.Init()
 	return req
+}
+
+func (p *GetRTCAlarmReq) Init() {
+	p.code = DEVMGMT_MSG_GET_RTC_ALARM_REQ
 }
 
 func (p *GetRTCAlarmReq) String() string {
@@ -591,8 +683,12 @@ type GetRTCAlarmResp struct {
 
 func NewGetRTCAlarmResp() *GetRTCAlarmResp {
 	resp := &GetRTCAlarmResp{}
-	resp.code = DEVMGMT_MSG_GET_RTC_ALARM_RSP
+	resp.Init()
 	return resp
+}
+
+func (p *GetRTCAlarmResp) Init() {
+	p.code = DEVMGMT_MSG_GET_RTC_ALARM_RSP
 }
 
 func (p *GetRTCAlarmResp) String() string {
@@ -600,8 +696,8 @@ func (p *GetRTCAlarmResp) String() string {
 }
 
 func (p *GetRTCAlarmResp) Decode(payload []byte) error {
-	p.status = payload[0]
-	err := devMgmtStatusCheck(p.status)
+	p.Status = payload[0]
+	err := devMgmtStatusCheck(p.Status)
 	if err != nil {
 		return err
 	}
@@ -622,15 +718,19 @@ type RTCAlarmInd struct {
 
 func NewRTCAlarmInd() *RTCAlarmInd {
 	ind := &RTCAlarmInd{}
-	ind.code = DEVMGMT_MSG_RTC_ALARM_IND
+	ind.Init()
 	return ind
 }
 
+func (p *RTCAlarmInd) Init() {
+	p.code = DEVMGMT_MSG_RTC_ALARM_IND
+}
+
 func (p *RTCAlarmInd) String() string {
-	return fmt.Sprintf("RTCAlarmInd[Status: 0x%02X]", p.status)
+	return fmt.Sprintf("RTCAlarmInd[Status: 0x%02X]", p.Status)
 }
 
 func (p *RTCAlarmInd) Decode(payload []byte) error {
-	p.status = payload[0]
-	return devMgmtStatusCheck(p.status)
+	p.Status = payload[0]
+	return devMgmtStatusCheck(p.Status)
 }

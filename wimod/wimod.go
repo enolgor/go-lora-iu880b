@@ -7,13 +7,18 @@ import (
 )
 
 type WiModMessage interface {
+	Code() uint16
 	ID() byte
 	Dst() byte
-	Code() uint16
+	Init()
 }
 
 type wimodMessageImpl struct {
 	code uint16
+}
+
+func (w *wimodMessageImpl) Code() uint16 {
+	return w.code
 }
 
 func (w *wimodMessageImpl) ID() byte {
@@ -24,17 +29,9 @@ func (w *wimodMessageImpl) Dst() byte {
 	return byte(w.code >> 8)
 }
 
-func (w *wimodMessageImpl) Code() uint16 {
-	return w.code
-}
-
 type wimodMessageStatusImpl struct {
 	wimodMessageImpl
-	status byte
-}
-
-func (w *wimodMessageStatusImpl) Status() byte {
-	return w.status
+	Status byte
 }
 
 type WiModMessageReq interface {
@@ -45,13 +42,11 @@ type WiModMessageReq interface {
 type WiModMessageResp interface {
 	WiModMessage
 	Decode(bytes []byte) error
-	Status() byte
 }
 
 type WiModMessageInd interface {
 	WiModMessage
 	Decode(bytes []byte) error
-	Status() byte
 }
 
 func EncodeReq(req WiModMessageReq) (*hci.HCIPacket, error) {

@@ -5,12 +5,18 @@ import (
 	"encoding/hex"
 	"flag"
 	"fmt"
+	"log"
+	"net"
+	"net/http"
+	"net/rpc"
 	"os"
 	"strconv"
 	"text/tabwriter"
 	"time"
 
 	"github.com/enolgor/wimod-lorawan-endnode-controller/controller"
+	"github.com/enolgor/wimod-lorawan-endnode-controller/rpc/client"
+	"github.com/enolgor/wimod-lorawan-endnode-controller/rpc/server"
 	"github.com/enolgor/wimod-lorawan-endnode-controller/wimod"
 	"github.com/tarm/serial"
 )
@@ -25,6 +31,7 @@ const usageMessage = `
 Usage: loractl <command> [<args>]
 
 Available commands:
+  server      Start server to control the endnode
   info        Display information about the network/device
   join        Join a LoRa network
   send        Send a packet to the network
@@ -32,6 +39,7 @@ Available commands:
   deactivate  Deactivate device
 `
 
+var serverCommand = flag.NewFlagSet("server", flag.ExitOnError)
 var infoCommand = flag.NewFlagSet("info", flag.ExitOnError)
 var joinCommand = flag.NewFlagSet("join", flag.ExitOnError)
 var sendCommand = flag.NewFlagSet("send", flag.ExitOnError)
@@ -44,6 +52,30 @@ const (
 	serialPortFlag        = "serialport"
 	defaultSerialPortFlag = ""
 	serialPortUsage       = "Set serial port of LoRa EndNode device"
+)
+
+var serverBindIP string
+
+const (
+	serverBindIPFlag        = "ip"
+	defaultServerBindIPFlag = "0.0.0.0"
+	serverBindIPUsage       = "Specify IP interface to bind the server"
+)
+
+var serverBindPort uint
+
+const (
+	serverBindPortFlag        = "port"
+	defaultServerBindPortFlag = 35360
+	serverBindPortUsage       = "Specify port to bind the server"
+)
+
+var serverHost string
+
+const (
+	serverHostFlag        = "server"
+	defaultServerHostFlag = "localhost:35360"
+	serverHostUsage       = "Specify ip:port where the controller server is binded"
 )
 
 var infoNetwork bool
@@ -161,20 +193,24 @@ const (
 var sendPort uint
 
 const (
-	sendPortFlag        = "loraport"
+	sendPortFlag        = "port"
 	defaultSendPortFlag = 0
 	sendPortUsage       = "Specify port: 0-255"
 )
 
 func init() {
-	infoCommand.StringVar(&serialPort, serialPortFlag, defaultSerialPortFlag, serialPortUsage)
+	serverCommand.StringVar(&serialPort, serialPortFlag, defaultSerialPortFlag, serialPortUsage)
+	serverCommand.StringVar(&serverBindIP, serverBindIPFlag, defaultServerBindIPFlag, serverBindIPUsage)
+	serverCommand.UintVar(&serverBindPort, serverBindPortFlag, defaultServerBindPortFlag, serverBindPortUsage)
+
+	infoCommand.StringVar(&serverHost, serverHostFlag, defaultServerHostFlag, serverHostUsage)
 	infoCommand.BoolVar(&infoNetwork, infoNetworkFlag, defaultInfoNetworkFlag, infoNetworkUsage)
 	infoCommand.BoolVar(&infoFirmware, infoFirmwareFlag, defaultInfoFirmwareFlag, infoFirmwareUsage)
 	infoCommand.BoolVar(&infoDevice, infoDeviceFlag, defaultInfoDeviceFlag, infoDeviceUsage)
 	infoCommand.BoolVar(&infoStatus, infoStatusFlag, defaultInfoStatusFlag, infoStatusUsage)
 	infoCommand.BoolVar(&infoRadio, infoRadioFlag, defaultInfoRadioFlag, infoRadioUsage)
 
-	joinCommand.StringVar(&serialPort, serialPortFlag, defaultSerialPortFlag, serialPortUsage)
+	joinCommand.StringVar(&serverHost, serverHostFlag, defaultServerHostFlag, serverHostUsage)
 	joinCommand.StringVar(&joinType, joinTypeFlag, defaultJoinTypeFlag, joinTypeUsage)
 	joinCommand.StringVar(&appKey, appKeyFlag, defaultAppKeyFlag, appKeyUsage)
 	joinCommand.StringVar(&appEUI, appEUIFlag, defaultAppEUIFlag, appEUIUsage)
@@ -182,15 +218,15 @@ func init() {
 	joinCommand.StringVar(&appSessKey, appSessKeyFlag, defaultAppSessKeyFlag, appSessKeyUsage)
 	joinCommand.StringVar(&nwkSessKey, nwkSessKeyFlag, defaultNwkSessKeyFlag, nwkSessKeyUsage)
 
-	sendCommand.StringVar(&serialPort, serialPortFlag, defaultSerialPortFlag, serialPortUsage)
+	sendCommand.StringVar(&serverHost, serverHostFlag, defaultServerHostFlag, serverHostUsage)
 	sendCommand.StringVar(&sendEnc, sendEncFlag, defaultSendEncFlag, sendEncUsage)
 	sendCommand.StringVar(&sendType, sendTypeFlag, defaultSendTypeFlag, sendTypeUsage)
 	sendCommand.StringVar(&sendPayload, sendPayloadFlag, defaultSendPayloadFlag, sendPayloadUsage)
 	sendCommand.UintVar(&sendPort, sendPortFlag, defaultSendPortFlag, sendPortUsage)
 
-	deactivateCommand.StringVar(&serialPort, serialPortFlag, defaultSerialPortFlag, serialPortUsage)
+	deactivateCommand.StringVar(&serverHost, serverHostFlag, defaultServerHostFlag, serverHostUsage)
 
-	synctimeCommand.StringVar(&serialPort, serialPortFlag, defaultSerialPortFlag, serialPortUsage)
+	synctimeCommand.StringVar(&serverHost, serverHostFlag, defaultServerHostFlag, serverHostUsage)
 
 }
 
@@ -200,6 +236,9 @@ func main() {
 		os.Exit(1)
 	}
 	switch os.Args[1] {
+	case "server":
+		serverCommand.Parse(os.Args[2:])
+		runServerCommand()
 	case "info":
 		infoCommand.Parse(os.Args[2:])
 		runInfoCommand()
@@ -227,14 +266,6 @@ func printDefaults(flagSet *flag.FlagSet) {
 	flagSet.PrintDefaults()
 }
 
-func checkSerialPort(flagSet *flag.FlagSet) {
-	if serialPort == "" {
-		fmt.Fprintln(os.Stderr, "Serial post must be specified")
-		printDefaults(flagSet)
-		os.Exit(1)
-	}
-}
-
 func printErrorAndExit(e error) {
 	fmt.Fprintf(os.Stderr, "ERROR: %s\n", e.Error())
 	os.Exit(1)
@@ -252,6 +283,14 @@ func getController() *controller.WiModController {
 	}
 	config := &controller.WiModControllerConfig{Stream: s}
 	return controller.NewController(config)
+}
+
+func getClient() *client.WimodClient {
+	cli, err := rpc.DialHTTP("tcp", serverHost)
+	if err != nil {
+		printErrorAndExit(err)
+	}
+	return &client.WimodClient{Client: cli}
 }
 
 func dataRateString(idx byte) string {
@@ -276,18 +315,31 @@ func dataRateString(idx byte) string {
 	return "Unknown Data Rate"
 }
 
+func runServerCommand() {
+	if serialPort == "" {
+		fmt.Fprintln(os.Stderr, "Serial post must be specified")
+		printDefaults(serverCommand)
+		os.Exit(1)
+	}
+	server := server.WimodServer{Controller: getController()}
+	rpc.Register(&server)
+	rpc.HandleHTTP()
+	l, e := net.Listen("tcp", fmt.Sprintf("%s:%d", serverBindIP, serverBindPort))
+	if e != nil {
+		log.Fatal("listen error:", e)
+	}
+	http.Serve(l, nil)
+}
+
 func runInfoCommand() {
-	checkSerialPort(infoCommand)
 	if !infoNetwork && !infoFirmware && !infoDevice && !infoStatus && !infoRadio {
 		printDefaults(infoCommand)
 		os.Exit(1)
 	}
-	controller := getController()
 	w := getTabWriter()
+	client := getClient()
 	if infoNetwork {
-		req := wimod.NewGetNwkStatusReq()
-		resp := wimod.NewGetNwkStatusResp()
-		err := controller.Request(req, resp)
+		resp, err := client.GetNwkStatus()
 		if err != nil {
 			printErrorAndExit(err)
 		}
@@ -311,9 +363,7 @@ func runInfoCommand() {
 	}
 
 	if infoFirmware {
-		req := wimod.NewGetFWInfoReq()
-		resp := wimod.NewGetFWInfoResp()
-		err := controller.Request(req, resp)
+		resp, err := client.GetFWInfo()
 		if err != nil {
 			printErrorAndExit(err)
 		}
@@ -324,21 +374,18 @@ func runInfoCommand() {
 	}
 
 	if infoDevice {
-		req := wimod.NewGetDeviceInfoReq()
 		resp := wimod.NewGetDeviceInfoResp()
-		err := controller.Request(req, resp)
+		resp, err := client.GetDeviceInfo()
 		if err != nil {
 			printErrorAndExit(err)
 		}
-		euiReq := wimod.NewGetDeviceEUIReq()
 		euiResp := wimod.NewGetDeviceEUIResp()
-		err = controller.Request(euiReq, euiResp)
+		euiResp, err = client.GetDeviceEUI()
 		if err != nil {
 			printErrorAndExit(err)
 		}
-		opModeReq := wimod.NewGetOPModeReq()
 		opModeResp := wimod.NewGetOPModeResp()
-		err = controller.Request(opModeReq, opModeResp)
+		opModeResp, err = client.GetOPMode()
 		if err != nil {
 			printErrorAndExit(err)
 		}
@@ -383,9 +430,7 @@ func runInfoCommand() {
 	}
 
 	if infoStatus {
-		req := wimod.NewGetDeviceStatusReq()
-		resp := wimod.NewGetDeviceStatusResp()
-		err := controller.Request(req, resp)
+		resp, err := client.GetDeviceStatus()
 		if err != nil {
 			printErrorAndExit(err)
 		}
@@ -418,9 +463,7 @@ func runInfoCommand() {
 	}
 
 	if infoRadio {
-		req := wimod.NewGetRStackConfigReq()
-		resp := wimod.NewGetRStackConfigResp()
-		err := controller.Request(req, resp)
+		resp, err := client.GetRStackConfig()
 		if err != nil {
 			printErrorAndExit(err)
 		}
@@ -448,11 +491,8 @@ func runInfoCommand() {
 }
 
 func runDeactivateCommand() {
-	checkSerialPort(deactivateCommand)
-	controller := getController()
-	deactivateReq := wimod.NewDeactivateDeviceReq()
-	deactivateResp := wimod.NewDeactivateDeviceResp()
-	err := controller.Request(deactivateReq, deactivateResp)
+	client := getClient()
+	err := client.DeactivateDevice()
 	if err != nil {
 		printErrorAndExit(err)
 	}
@@ -462,27 +502,21 @@ func runDeactivateCommand() {
 }
 
 func runSynctimeCommand() {
-	checkSerialPort(synctimeCommand)
-	controller := getController()
-	reqSet := wimod.NewSetRTCReq(time.Now().UTC())
-	respSet := wimod.NewSetRTCResp()
-	err := controller.Request(reqSet, respSet)
+	client := getClient()
+	err := client.SetRTC(time.Now().UTC())
 	if err != nil {
 		printErrorAndExit(err)
 	}
-	reqGet := wimod.NewGetRTCReq()
-	respGet := wimod.NewGetRTCResp()
-	err = controller.Request(reqGet, respGet)
+	resp, err := client.GetRTC()
 	if err != nil {
 		printErrorAndExit(err)
 	}
 	w := getTabWriter()
-	fmt.Fprintf(w, "Time synced:\t%s\n", respGet.Time)
+	fmt.Fprintf(w, "Time synced:\t%s\n", resp.Time)
 	w.Flush()
 }
 
 func runJoinCommand() {
-	checkSerialPort(joinCommand)
 	switch joinType {
 	case "abp":
 		if appSessKey == "" || nwkSessKey == "" || address == "" {
@@ -512,7 +546,7 @@ func runJoinCommand() {
 }
 
 func otaaJoin() error {
-	controller := getController()
+	client := getClient()
 	eui, err := wimod.ParseEUI(appEUI)
 	if err != nil {
 		return err
@@ -521,36 +555,28 @@ func otaaJoin() error {
 	if err != nil {
 		return err
 	}
-	nwkStatusReq := wimod.NewGetNwkStatusReq()
-	nwkStatusResp := wimod.NewGetNwkStatusResp()
-	err = controller.Request(nwkStatusReq, nwkStatusResp)
+	nwkStatusResp, err := client.GetNwkStatus()
 	if err != nil {
 		return err
 	}
 	if nwkStatusResp.NetworkStatus != wimod.LORAWAN_NETWORK_STATUS_INACTIVE {
 		printErrorAndExit(fmt.Errorf("device is already joined or joining, deactivate first"))
 	}
-	joinParamReq := wimod.NewSetJoinParamReq(eui, key)
-	joinParamResp := wimod.NewSetJoinParamResp()
-	err = controller.Request(joinParamReq, joinParamResp)
+	err = client.SetJoinParam(eui, key)
 	if err != nil {
 		return err
 	}
-	joinReq := wimod.NewJoinNetworkReq()
-	joinResp := wimod.NewJoinNetworkResp()
-	err = controller.Request(joinReq, joinResp)
+	err = client.JoinNetwork()
 	if err != nil {
 		return err
 	}
-	joinTxEvent := wimod.NewJoinNetworkTxInd()
-	joinedEvent := wimod.NewJoinNetworkInd()
-	err = controller.ReadSpecificInd(joinTxEvent)
+	_, err = client.JoinNetworkTxInd()
 	if err != nil {
 		return err
 	}
 	w := getTabWriter()
 	fmt.Fprintf(w, "Join packet successfully sent\n")
-	err = controller.ReadSpecificInd(joinedEvent)
+	joinedEvent, err := client.JoinNetworkInd()
 	if err != nil {
 		return err
 	}
@@ -561,7 +587,7 @@ func otaaJoin() error {
 }
 
 func abpJoin() error {
-	controller := getController()
+	client := getClient()
 	keyApp, err := wimod.ParseKey(appSessKey)
 	if err != nil {
 		return err
@@ -574,18 +600,14 @@ func abpJoin() error {
 	if err != nil {
 		return err
 	}
-	nwkStatusReq := wimod.NewGetNwkStatusReq()
-	nwkStatusResp := wimod.NewGetNwkStatusResp()
-	err = controller.Request(nwkStatusReq, nwkStatusResp)
+	nwkStatusResp, err := client.GetNwkStatus()
 	if err != nil {
 		return err
 	}
 	if nwkStatusResp.NetworkStatus != wimod.LORAWAN_NETWORK_STATUS_INACTIVE {
 		printErrorAndExit(fmt.Errorf("device is already joined or joining, deactivate first"))
 	}
-	activateReq := wimod.NewActivateDeviceReq(uint32(addr), keyApp, keyNwk)
-	activateResp := wimod.NewActivateDeviceResp()
-	err = controller.Request(activateReq, activateResp)
+	err = client.ActivateDevice(uint32(addr), keyApp, keyNwk)
 	if err != nil {
 		return err
 	}
@@ -596,7 +618,6 @@ func abpJoin() error {
 }
 
 func runSendCommand() {
-	checkSerialPort(sendCommand)
 	if sendType != "c" && sendType != "u" {
 		printErrorAndExit(fmt.Errorf("send type should be (c)onfirmed or (u)nconfirmed"))
 	}
@@ -641,15 +662,12 @@ func runSendCommand() {
 }
 
 func sendUnconfirmed(port byte, payload []byte) error {
-	controller := getController()
-	udataReq := wimod.NewSendUDataReq(port, payload)
-	udataResp := wimod.NewSendUDataResp()
-	err := controller.Request(udataReq, udataResp)
+	client := getClient()
+	_, err := client.SendUData(port, payload)
 	if err != nil {
 		return err
 	}
-	udataTxInd := wimod.NewSendUDataTxInd()
-	err = controller.ReadSpecificInd(udataTxInd)
+	_, err = client.SendUDataTxInd()
 	if err != nil {
 		return err
 	}

@@ -16,11 +16,15 @@ type ActivateDeviceReq struct {
 
 func NewActivateDeviceReq(address uint32, appSessKey Key, nwkSessKey Key) *ActivateDeviceReq {
 	req := &ActivateDeviceReq{}
-	req.code = LORAWAN_MSG_ACTIVATE_DEVICE_REQ
+	req.Init()
 	req.Address = address
 	req.AppSessKey = appSessKey
 	req.NwkSessKey = nwkSessKey
 	return req
+}
+
+func (p *ActivateDeviceReq) Init() {
+	p.code = LORAWAN_MSG_ACTIVATE_DEVICE_REQ
 }
 
 func (p *ActivateDeviceReq) String() string {
@@ -43,8 +47,12 @@ type ActivateDeviceResp struct {
 
 func NewActivateDeviceResp() *ActivateDeviceResp {
 	resp := &ActivateDeviceResp{}
-	resp.code = LORAWAN_MSG_ACTIVATE_DEVICE_RSP
+	resp.Init()
 	return resp
+}
+
+func (p *ActivateDeviceResp) Init() {
+	p.code = LORAWAN_MSG_ACTIVATE_DEVICE_RSP
 }
 
 func (p *ActivateDeviceResp) String() string {
@@ -52,8 +60,8 @@ func (p *ActivateDeviceResp) String() string {
 }
 
 func (p *ActivateDeviceResp) Decode(payload []byte) error {
-	p.status = payload[0]
-	return lorawanStatusCheck(p.status)
+	p.Status = payload[0]
+	return lorawanStatusCheck(p.Status)
 }
 
 // LORAWAN_MSG_SET_JOIN_PARAM_REQ
@@ -66,10 +74,14 @@ type SetJoinParamReq struct {
 
 func NewSetJoinParamReq(appEUI EUI, appKey Key) *SetJoinParamReq {
 	req := &SetJoinParamReq{}
-	req.code = LORAWAN_MSG_SET_JOIN_PARAM_REQ
+	req.Init()
 	req.AppEUI = appEUI
 	req.AppKey = appKey
 	return req
+}
+
+func (p *SetJoinParamReq) Init() {
+	p.code = LORAWAN_MSG_SET_JOIN_PARAM_REQ
 }
 
 func (p *SetJoinParamReq) String() string {
@@ -90,8 +102,12 @@ type SetJoinParamResp struct {
 
 func NewSetJoinParamResp() *SetJoinParamResp {
 	resp := &SetJoinParamResp{}
-	resp.code = LORAWAN_MSG_SET_JOIN_PARAM_RSP
+	resp.Init()
 	return resp
+}
+
+func (p *SetJoinParamResp) Init() {
+	p.code = LORAWAN_MSG_SET_JOIN_PARAM_RSP
 }
 
 func (p *SetJoinParamResp) String() string {
@@ -99,8 +115,8 @@ func (p *SetJoinParamResp) String() string {
 }
 
 func (p *SetJoinParamResp) Decode(payload []byte) error {
-	p.status = payload[0]
-	return lorawanStatusCheck(p.status)
+	p.Status = payload[0]
+	return lorawanStatusCheck(p.Status)
 }
 
 // LORAWAN_MSG_JOIN_NETWORK_REQ
@@ -111,8 +127,12 @@ type JoinNetworkReq struct {
 
 func NewJoinNetworkReq() *JoinNetworkReq {
 	req := &JoinNetworkReq{}
-	req.code = LORAWAN_MSG_JOIN_NETWORK_REQ
+	req.Init()
 	return req
+}
+
+func (p *JoinNetworkReq) Init() {
+	p.code = LORAWAN_MSG_JOIN_NETWORK_REQ
 }
 
 func (p *JoinNetworkReq) String() string {
@@ -131,8 +151,12 @@ type JoinNetworkResp struct {
 
 func NewJoinNetworkResp() *JoinNetworkResp {
 	resp := &JoinNetworkResp{}
-	resp.code = LORAWAN_MSG_JOIN_NETWORK_RSP
+	resp.Init()
 	return resp
+}
+
+func (p *JoinNetworkResp) Init() {
+	p.code = LORAWAN_MSG_JOIN_NETWORK_RSP
 }
 
 func (p *JoinNetworkResp) String() string {
@@ -140,8 +164,8 @@ func (p *JoinNetworkResp) String() string {
 }
 
 func (p *JoinNetworkResp) Decode(payload []byte) error {
-	p.status = payload[0]
-	return lorawanStatusCheck(p.status)
+	p.Status = payload[0]
+	return lorawanStatusCheck(p.Status)
 }
 
 // LORAWAN_MSG_JOIN_NETWORK_TX_IND
@@ -157,20 +181,24 @@ type JoinNetworkTxInd struct {
 
 func NewJoinNetworkTxInd() *JoinNetworkTxInd {
 	ind := &JoinNetworkTxInd{}
-	ind.code = LORAWAN_MSG_JOIN_NETWORK_TX_IND
+	ind.Init()
 	return ind
 }
 
+func (p *JoinNetworkTxInd) Init() {
+	p.code = LORAWAN_MSG_JOIN_NETWORK_TX_IND
+}
+
 func (p *JoinNetworkTxInd) String() string {
-	return fmt.Sprintf("JoinNetworkTxInd[Status: 0x%02X, ChannelIdx: %d, DataRateIdx: %d, NumTxPackets: %d, TRXPowerLevel: %d, RFMessageAirtime: %d]", p.status, p.ChannelIdx, p.DataRateIdx, p.NumTxPackets, p.TRXPowerLevel, p.RFMessageAirtime)
+	return fmt.Sprintf("JoinNetworkTxInd[Status: 0x%02X, ChannelIdx: %d, DataRateIdx: %d, NumTxPackets: %d, TRXPowerLevel: %d, RFMessageAirtime: %d]", p.Status, p.ChannelIdx, p.DataRateIdx, p.NumTxPackets, p.TRXPowerLevel, p.RFMessageAirtime)
 }
 
 func (p *JoinNetworkTxInd) Decode(bytes []byte) error {
-	p.status = bytes[0]
-	if p.status != LORAWAN_MSG_JOIN_NETWORK_TX_IND_STATUS_OK && p.status != LORAWAN_MSG_JOIN_NETWORK_TX_IND_STATUS_OK_ATTACHMENT {
-		p.status = LORAWAN_MSG_JOIN_NETWORK_TX_IND_STATUS_ERROR
+	p.Status = bytes[0]
+	if p.Status != LORAWAN_MSG_JOIN_NETWORK_TX_IND_STATUS_OK && p.Status != LORAWAN_MSG_JOIN_NETWORK_TX_IND_STATUS_OK_ATTACHMENT {
+		p.Status = LORAWAN_MSG_JOIN_NETWORK_TX_IND_STATUS_ERROR
 	}
-	if p.status == LORAWAN_MSG_JOIN_NETWORK_TX_IND_STATUS_OK_ATTACHMENT {
+	if p.Status == LORAWAN_MSG_JOIN_NETWORK_TX_IND_STATUS_OK_ATTACHMENT {
 		p.ChannelIdx = bytes[1]
 		p.DataRateIdx = bytes[2]
 		p.NumTxPackets = bytes[3]
@@ -194,20 +222,24 @@ type JoinNetworkInd struct {
 
 func NewJoinNetworkInd() *JoinNetworkInd {
 	ind := &JoinNetworkInd{}
-	ind.code = LORAWAN_MSG_JOIN_NETWORK_IND
+	ind.Init()
 	return ind
 }
 
+func (p *JoinNetworkInd) Init() {
+	p.code = LORAWAN_MSG_JOIN_NETWORK_IND
+}
+
 func (p *JoinNetworkInd) String() string {
-	return fmt.Sprintf("JoinNetworkInd[Status: 0x%02X, Address: 0x%08X, ChannelIdx: %d, DataRateIdx: %d, RSSI: %d, SNR: %d, RxSlot: %d]", p.status, p.Address, p.ChannelIdx, p.DataRateIdx, p.RSSI, p.SNR, p.RxSlot)
+	return fmt.Sprintf("JoinNetworkInd[Status: 0x%02X, Address: 0x%08X, ChannelIdx: %d, DataRateIdx: %d, RSSI: %d, SNR: %d, RxSlot: %d]", p.Status, p.Address, p.ChannelIdx, p.DataRateIdx, p.RSSI, p.SNR, p.RxSlot)
 }
 
 func (p *JoinNetworkInd) Decode(bytes []byte) error {
-	p.status = bytes[0]
-	if p.status != LORAWAN_MSG_JOIN_NETWORK_IND_STATUS_OK && p.status != LORAWAN_MSG_JOIN_NETWORK_IND_STATUS_OK_ATTACHMENT {
-		p.status = LORAWAN_MSG_JOIN_NETWORK_IND_STATUS_ERROR
+	p.Status = bytes[0]
+	if p.Status != LORAWAN_MSG_JOIN_NETWORK_IND_STATUS_OK && p.Status != LORAWAN_MSG_JOIN_NETWORK_IND_STATUS_OK_ATTACHMENT {
+		p.Status = LORAWAN_MSG_JOIN_NETWORK_IND_STATUS_ERROR
 	}
-	if p.status == LORAWAN_MSG_JOIN_NETWORK_IND_STATUS_OK_ATTACHMENT {
+	if p.Status == LORAWAN_MSG_JOIN_NETWORK_IND_STATUS_OK_ATTACHMENT {
 		p.Address = binary.LittleEndian.Uint32(bytes[1:5])
 		p.ChannelIdx = bytes[5]
 		p.DataRateIdx = bytes[6]
@@ -228,10 +260,14 @@ type SendUDataReq struct {
 
 func NewSendUDataReq(port byte, payload []byte) *SendUDataReq {
 	req := &SendUDataReq{}
-	req.code = LORAWAN_MSG_SEND_UDATA_REQ
+	req.Init()
 	req.Port = port
 	req.Payload = payload
 	return req
+}
+
+func (p *SendUDataReq) Init() {
+	p.code = LORAWAN_MSG_SEND_UDATA_REQ
 }
 
 func (p *SendUDataReq) String() string {
@@ -253,8 +289,12 @@ type SendUDataResp struct {
 
 func NewSendUDataResp() *SendUDataResp {
 	resp := &SendUDataResp{}
-	resp.code = LORAWAN_MSG_SEND_UDATA_RSP
+	resp.Init()
 	return resp
+}
+
+func (p *SendUDataResp) Init() {
+	p.code = LORAWAN_MSG_SEND_UDATA_RSP
 }
 
 func (p *SendUDataResp) String() string {
@@ -262,8 +302,8 @@ func (p *SendUDataResp) String() string {
 }
 
 func (p *SendUDataResp) Decode(payload []byte) error {
-	p.status = payload[0]
-	switch p.status {
+	p.Status = payload[0]
+	switch p.Status {
 	case LORAWAN_STATUS_OK:
 		return nil
 	case LORAWAN_STATUS_CHANNEL_BLOCKED:
@@ -287,21 +327,25 @@ type SendUDataTxInd struct {
 
 func NewSendUDataTxInd() *SendUDataTxInd {
 	ind := &SendUDataTxInd{}
-	ind.code = LORAWAN_MSG_SEND_UDATA_TX_IND
+	ind.Init()
 	return ind
 }
 
+func (p *SendUDataTxInd) Init() {
+	p.code = LORAWAN_MSG_SEND_UDATA_TX_IND
+}
+
 func (p *SendUDataTxInd) String() string {
-	return fmt.Sprintf("SendUDataTxInd[Status: 0x%02X, ChannelIdx: %d, DataRateIdx: %d, NumTxPackets: %d, TRXPowerLevel: %d, RFMessageAirtime: %d]", p.status, p.ChannelIdx, p.DataRateIdx, p.NumTxPackets, p.TRXPowerLevel, p.RFMessageAirtime)
+	return fmt.Sprintf("SendUDataTxInd[Status: 0x%02X, ChannelIdx: %d, DataRateIdx: %d, NumTxPackets: %d, TRXPowerLevel: %d, RFMessageAirtime: %d]", p.Status, p.ChannelIdx, p.DataRateIdx, p.NumTxPackets, p.TRXPowerLevel, p.RFMessageAirtime)
 }
 
 func (p *SendUDataTxInd) Decode(bytes []byte) error {
-	p.status = bytes[0]
-	if p.status != LORAWAN_MSG_SEND_UDATA_TX_IND_STATUS_OK && p.status != LORAWAN_MSG_SEND_UDATA_TX_IND_STATUS_OK_ATTACHMENT {
-		p.status = LORAWAN_MSG_SEND_UDATA_TX_IND_STATUS_ERROR
+	p.Status = bytes[0]
+	if p.Status != LORAWAN_MSG_SEND_UDATA_TX_IND_STATUS_OK && p.Status != LORAWAN_MSG_SEND_UDATA_TX_IND_STATUS_OK_ATTACHMENT {
+		p.Status = LORAWAN_MSG_SEND_UDATA_TX_IND_STATUS_ERROR
 		return fmt.Errorf("LORAWAN_MSG_SEND_UDATA_TX_IND_STATUS_ERROR")
 	}
-	if p.status == LORAWAN_MSG_SEND_UDATA_TX_IND_STATUS_OK_ATTACHMENT {
+	if p.Status == LORAWAN_MSG_SEND_UDATA_TX_IND_STATUS_OK_ATTACHMENT {
 		p.ChannelIdx = bytes[1]
 		p.DataRateIdx = bytes[2]
 		p.NumTxPackets = bytes[3]
@@ -328,8 +372,12 @@ type GetRStackConfigReq struct {
 
 func NewGetRStackConfigReq() *GetRStackConfigReq {
 	req := &GetRStackConfigReq{}
-	req.code = LORAWAN_MSG_GET_RSTACK_CONFIG_REQ
+	req.Init()
 	return req
+}
+
+func (p *GetRStackConfigReq) Init() {
+	p.code = LORAWAN_MSG_GET_RSTACK_CONFIG_REQ
 }
 
 func (p *GetRStackConfigReq) String() string {
@@ -359,8 +407,12 @@ type GetRStackConfigResp struct {
 
 func NewGetRStackConfigResp() *GetRStackConfigResp {
 	resp := &GetRStackConfigResp{}
-	resp.code = LORAWAN_MSG_GET_RSTACK_CONFIG_RSP
+	resp.Init()
 	return resp
+}
+
+func (p *GetRStackConfigResp) Init() {
+	p.code = LORAWAN_MSG_GET_RSTACK_CONFIG_RSP
 }
 
 func (p *GetRStackConfigResp) String() string {
@@ -368,8 +420,8 @@ func (p *GetRStackConfigResp) String() string {
 }
 
 func (p *GetRStackConfigResp) Decode(payload []byte) error {
-	p.status = payload[0]
-	err := lorawanStatusCheck(p.status)
+	p.Status = payload[0]
+	err := lorawanStatusCheck(p.Status)
 	if err != nil {
 		return err
 	}
@@ -395,8 +447,12 @@ type ReactivateDeviceReq struct {
 
 func NewReactivateDeviceReq() *ReactivateDeviceReq {
 	req := &ReactivateDeviceReq{}
-	req.code = LORAWAN_MSG_REACTIVATE_DEVICE_REQ
+	req.Init()
 	return req
+}
+
+func (p *ReactivateDeviceReq) Init() {
+	p.code = LORAWAN_MSG_REACTIVATE_DEVICE_REQ
 }
 
 func (p *ReactivateDeviceReq) String() string {
@@ -416,8 +472,12 @@ type ReactivateDeviceResp struct {
 
 func NewReactivateDeviceResp() *ReactivateDeviceResp {
 	resp := &ReactivateDeviceResp{}
-	resp.code = LORAWAN_MSG_REACTIVATE_DEVICE_RSP
+	resp.Init()
 	return resp
+}
+
+func (p *ReactivateDeviceResp) Init() {
+	p.code = LORAWAN_MSG_REACTIVATE_DEVICE_RSP
 }
 
 func (p *ReactivateDeviceResp) String() string {
@@ -425,8 +485,8 @@ func (p *ReactivateDeviceResp) String() string {
 }
 
 func (p *ReactivateDeviceResp) Decode(payload []byte) error {
-	p.status = payload[0]
-	err := lorawanStatusCheck(p.status)
+	p.Status = payload[0]
+	err := lorawanStatusCheck(p.Status)
 	if err != nil {
 		return err
 	}
@@ -442,8 +502,12 @@ type DeactivateDeviceReq struct {
 
 func NewDeactivateDeviceReq() *DeactivateDeviceReq {
 	req := &DeactivateDeviceReq{}
-	req.code = LORAWAN_MSG_DEACTIVATE_DEVICE_REQ
+	req.Init()
 	return req
+}
+
+func (p *DeactivateDeviceReq) Init() {
+	p.code = LORAWAN_MSG_DEACTIVATE_DEVICE_REQ
 }
 
 func (p *DeactivateDeviceReq) String() string {
@@ -462,8 +526,12 @@ type DeactivateDeviceResp struct {
 
 func NewDeactivateDeviceResp() *DeactivateDeviceResp {
 	resp := &DeactivateDeviceResp{}
-	resp.code = LORAWAN_MSG_DEACTIVATE_DEVICE_RSP
+	resp.Init()
 	return resp
+}
+
+func (p *DeactivateDeviceResp) Init() {
+	p.code = LORAWAN_MSG_DEACTIVATE_DEVICE_RSP
 }
 
 func (p *DeactivateDeviceResp) String() string {
@@ -471,8 +539,8 @@ func (p *DeactivateDeviceResp) String() string {
 }
 
 func (p *DeactivateDeviceResp) Decode(payload []byte) error {
-	p.status = payload[0]
-	return lorawanStatusCheck(p.status)
+	p.Status = payload[0]
+	return lorawanStatusCheck(p.Status)
 }
 
 // LORAWAN_MSG_FACTORY_RESET_REQ
@@ -487,8 +555,12 @@ type GetDeviceEUIReq struct {
 
 func NewGetDeviceEUIReq() *GetDeviceEUIReq {
 	req := &GetDeviceEUIReq{}
-	req.code = LORAWAN_MSG_GET_DEVICE_EUI_REQ
+	req.Init()
 	return req
+}
+
+func (p *GetDeviceEUIReq) Init() {
+	p.code = LORAWAN_MSG_GET_DEVICE_EUI_REQ
 }
 
 func (p *GetDeviceEUIReq) String() string {
@@ -508,8 +580,12 @@ type GetDeviceEUIResp struct {
 
 func NewGetDeviceEUIResp() *GetDeviceEUIResp {
 	resp := &GetDeviceEUIResp{}
-	resp.code = LORAWAN_MSG_GET_DEVICE_EUI_RSP
+	resp.Init()
 	return resp
+}
+
+func (p *GetDeviceEUIResp) Init() {
+	p.code = LORAWAN_MSG_GET_DEVICE_EUI_RSP
 }
 
 func (p *GetDeviceEUIResp) String() string {
@@ -517,7 +593,7 @@ func (p *GetDeviceEUIResp) String() string {
 }
 
 func (p *GetDeviceEUIResp) Decode(payload []byte) error {
-	p.status = payload[0]
+	p.Status = payload[0]
 	err := lorawanStatusCheck(payload[0])
 	if err != nil {
 		return err
@@ -534,8 +610,12 @@ type GetNwkStatusReq struct {
 
 func NewGetNwkStatusReq() *GetNwkStatusReq {
 	req := &GetNwkStatusReq{}
-	req.code = LORAWAN_MSG_GET_NWK_STATUS_REQ
+	req.Init()
 	return req
+}
+
+func (p *GetNwkStatusReq) Init() {
+	p.code = LORAWAN_MSG_GET_NWK_STATUS_REQ
 }
 
 func (p *GetNwkStatusReq) String() string {
@@ -559,8 +639,12 @@ type GetNwkStatusResp struct {
 
 func NewGetNwkStatusResp() *GetNwkStatusResp {
 	resp := &GetNwkStatusResp{}
-	resp.code = LORAWAN_MSG_GET_NWK_STATUS_RSP
+	resp.Init()
 	return resp
+}
+
+func (p *GetNwkStatusResp) Init() {
+	p.code = LORAWAN_MSG_GET_NWK_STATUS_RSP
 }
 
 func (p *GetNwkStatusResp) String() string {
@@ -568,8 +652,8 @@ func (p *GetNwkStatusResp) String() string {
 }
 
 func (p *GetNwkStatusResp) Decode(payload []byte) error {
-	p.status = payload[0]
-	err := lorawanStatusCheck(p.status)
+	p.Status = payload[0]
+	err := lorawanStatusCheck(p.Status)
 	if err != nil {
 		return err
 	}
